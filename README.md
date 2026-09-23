@@ -6,7 +6,6 @@ Proyecto Capstone del ramo **APT122** que consiste en una plataforma web para la
 
 SIGMAVE permite registrar vehículos, reportar fallas, programar mantenciones y visualizar métricas del estado de la flota, con distintos niveles de acceso según el rol del usuario.
 
-## 📁 Estructura del repositorio
 
 ## 📁 Estructura del repositorio
 
@@ -81,6 +80,3 @@ Las evidencias y entregables académicos se encuentran en la carpeta docs/.
 
 📄 Licencia
 Proyecto académico — uso educativo.
-
-
-}
