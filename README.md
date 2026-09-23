@@ -62,11 +62,13 @@ El servidor estará disponible en http://localhost:3000 (o el puerto configurado
 # Crear la base de datos en PostgreSQL
 createdb sigmave_db
 
-👥 Equipo
-Nombre	                Rol
-Enzo Toledo	            Desarrollador back-end
-Patricio Finschi	      Desarrollador Front-end
-Ramón Ortiz	            Scrum Master
+## 👥 Equipo
+
+| Nombre | Rol |
+|---|---|
+| Enzo Toledo | Frontend Developer |
+| Patricio Finschi | Backend Developer |
+| Ramón Ortiz | Full Stack Developer |
 
 📚 Documentación
 Las evidencias y entregables académicos se encuentran en la carpeta docs/.
