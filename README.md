@@ -64,7 +64,9 @@ El servidor estará disponible en http://localhost:3000 (o el puerto configurado
 ### Base de datos
 
 # Crear la base de datos en PostgreSQL
+```
 createdb sigmave_db
+```
 
 ## 👥 Equipo
 
