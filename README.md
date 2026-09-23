@@ -9,10 +9,10 @@ SIGMAVE permite registrar vehículos, reportar fallas, programar mantenciones y 
 ## 📁 Estructura del repositorio
 
 proyecto-capstone/
-├── frontend/ # Aplicación cliente (React + Vite + Tailwind CSS)
-├── backend/ # API servidor (Node.js + Express + PostgreSQL)
-└── docs/ # Documentación y evidencias académicas
-└── Fase 1/ # Entregables de la primera fase del proyecto
+├── frontend/                 # Aplicación cliente (React + Vite + Tailwind CSS)
+├── backend/                  # API servidor (Node.js + Express + PostgreSQL)
+└── docs/                     # Documentación y evidencias académicas
+    └── Fase 1/               # Entregables de la primera fase del proyecto
 
 
 ## 🚀 Tecnologías
