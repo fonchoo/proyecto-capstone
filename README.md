@@ -48,11 +48,12 @@ La aplicación estará disponible en http://localhost:5173 (puerto por defecto d
 
 
 ### Backend
-
+```bash
 cd backend
 npm install
 # Configurar variables de entorno (.env)
 npm run dev
+```
 
 El servidor estará disponible en http://localhost:3000 (o el puerto configurado).
 
@@ -66,9 +67,9 @@ createdb sigmave_db
 
 | Nombre | Rol |
 |---|---|
-| Enzo Toledo | Frontend Developer |
-| Patricio Finschi | Backend Developer |
-| Ramón Ortiz | Full Stack Developer |
+| Enzo Toledo | Backend Developer |
+| Patricio Finschi | Frontend Developer |
+| Ramón Ortiz | SCRUM Master y Documentacion |
 
 📚 Documentación
 Las evidencias y entregables académicos se encuentran en la carpeta docs/.
