@@ -1,0 +1,31 @@
+# ============================================================
+# docker-compose.prod.yml (PRODUCCION)
+# ============================================================
+# Como se usa (el override NO se carga cuando usas -f explicito):
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Que hace:
+#   1. Cambia el NOMBRE DEL PROYECTO a "capstone-prod" -> red propia,
+#      separada del desarrollo. La BD de produccion arranca VACIA
+#      (no hereda los seeds del override).
+#   2. Agrega el servicio "web": nginx sirviendo dist/ y
+#      proxeando /api hacia la API interna ("server").
+#
+# Los servicios "db" y "server" ya vienen de docker-compose.yml.
+
+name: capstone-prod
+
+services:
+  web:
+    # El "Dockerfile" raiz (multi-stage node -> nginx).
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: capstone-web
+    container_name: capstone-web
+    restart: unless-stopped
+    depends_on:
+      - server
+    ports:
+      # 8080 del host -> 80 del contenedor: UNICA puerta de entrada.
+      - "8080:80"

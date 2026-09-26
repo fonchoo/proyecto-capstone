@@ -1,0 +1,20 @@
+# ============================================================
+# backend/Dockerfile.dev  (API en modo DESARROLLO)
+# ============================================================
+# Imagen SOLO para desarrollo: corre "nodemon" (reinicia la API al
+# cambiar archivos). El código "vivo" entra por el bind-mount
+# ./backend:/app y node_modules se mantiene el del contenedor.
+
+FROM node:22-alpine
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Lo que no excluye .dockerignore (node_modules, .env, etc.).
+COPY . .
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev"]

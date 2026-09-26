@@ -1,7 +1,16 @@
+# ============================================================
+# .dockerignore (contexto de build del frontend)
+# ============================================================
+# Excluidos del CONTEXTO de build. Reducen el tamaño enviado a
+# Docker y evitan que las credenciales/archivos grandes entren a
+# la imagen.
+
 node_modules
 dist
 .git
-*.log
 .env
 .env.*
+*.log
+*.md
 .DS_Store
+.dockerignore

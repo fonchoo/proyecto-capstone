@@ -1,0 +1,4 @@
+# No copiar a la imagen: las credenciales van por variables de entorno.
+.env
+node_modules/
+npm-debug.log*

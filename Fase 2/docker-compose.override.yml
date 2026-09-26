@@ -1,0 +1,70 @@
+# ============================================================
+# docker-compose.override.yml (DESARROLLO, autocargado)
+# ============================================================
+# Compose aplica ESTE archivo automaticamente cuando corres:
+#   docker compose up
+# ...y NO lo aplica cuando usas "-f" explicito (produccion).
+#
+# Es el lugar para TODO lo de comodidad de desarrollo:
+#   - init de la base con schema + seed automatizados
+#   - hot reload (Vite HMR + nodemon)
+#   - bind-mounts (cambios de codigo sin rebuild)
+#   - puertos expuestos para programar
+
+services:
+  # ------------------ Base de datos (desarrollo) ------------------
+  db:
+    ports:
+      # 5434 del host -> 5432 del contenedor. Se usa 5434 para NO
+      # chocar con los PostgreSQL locales (5432 y 5433 ya ocupados).
+      - "5434:5432"
+    volumes:
+      # Scripts de inicializacion: SOLO se ejecutan la primera vez
+      # que la base es vacia ("down -v" + "up -d" los reaplica):
+      #   01 -> schema, 02 -> seed.
+      - ./backend/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./backend/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+
+  # ------------------ API (desarrollo) ------------------
+  server:
+    # Imagen SOLO para dev: nodemon reinicia al tocar codigo.
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    command: npm run dev -- --legacy-watch
+    environment:
+      # Pisa el NODE_ENV=production de la base.
+      NODE_ENV: development
+    volumes:
+      # Monta el codigo EN VIVO (bind-mount)...
+      - ./backend:/app
+      # ...pero node_modules NO se pisa con el del host Windows
+      # (binarios nativos incompatibles con Linux).
+      - /app/node_modules
+    ports:
+      # API directa en el host (sin pasar por vite/nginx).
+      - "3000:3000"
+
+  # ------------------ Frontend (desarrollo) ------------------
+  web-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: npm run dev
+    environment:
+      # Vite reenvia /api al NOMBRE DE SERVICIO del compose (no
+      # "localhost", que dentro del contenedor seria el mismo Vite).
+      VITE_API_PROXY: http://server:3000
+      # En Windows/WSL2 los bind-mounts no disparan eventos de
+      # archivos: hay que usar polling para que el HMR funcione.
+      VITE_USE_POLLING: "true"
+    volumes:
+      # Monta el codigo EN VIVO (bind-mount)...
+      - ./:/app
+      # ...pero node_modules NO se pisa con el del host Windows
+      # (binarios nativos incompatibles con Linux).
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - server

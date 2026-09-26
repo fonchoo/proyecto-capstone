@@ -1,18 +1,27 @@
+# ============================================================
+# Dockerfile.dev (FRONTEND en modo DESARROLLO)
+# ============================================================
+# Sirve SOLO para programar: levanta el dev server de Vite con
+# Hot Module Replacement (HMR). El codigo "vivo" entra por el
+# bind-mount de docker-compose.override.yml (./:/app), asi que
+# los cambios se ven SIN reconstruir la imagen.
+#
+# La imagen de PRODUCCION sigue siendo el "Dockerfile" (nginx).
+
 FROM node:22-alpine
 
 WORKDIR /app
 
-# Copiar archivos de dependencias
-COPY package*.json ./
-
-# Instalar dependencias
+# Manifiestos primero (para aprovechar la cache de Docker).
+COPY package.json package-lock.json ./
 RUN npm ci
 
-# Copiar el resto del código fuente
+# Copia el resto (lo que no excluye .dockerignore). En dev la
+# imagen se usa con bind-mount, pero asi queda funcional sola.
 COPY . .
 
-# Exponer el puerto del dev server de Vite
 EXPOSE 5173
 
-# Comando para arrancar Vite en modo desarrollo con recarga en vivo
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+# Vite escucha en 0.0.0.0 (host: true en vite.config.js) para que
+# el puerto 5173 sea accesible desde el host.
+CMD ["npm", "run", "dev"]

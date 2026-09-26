@@ -1,21 +1,62 @@
-services:
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: capstone-frontend
-    ports:
-      - "8080:80"
-    restart: unless-stopped
+# ============================================================
+# docker-compose.yml (BASE = produccion)
+# ============================================================
+# Archivo principal de Compose. Define el stack con postura de
+# PRODUCCION:
+#   - db     -> PostgreSQL (datos en volumen, healthcheck)
+#   - server -> API Express compilada para produccion
+#
+# El servicio WEB (nginx) se agrega en el overlay de produccion:
+#   docker-compose.prod.yml
+#
+# El DESARROLLO sale del "override" que Compose carga automatico:
+#   docker-compose.override.yml   (aplicado solo con "docker compose up")
+#
+# Regla de oro: lo que vive aqui ya es productivo; todo lo de
+# comodidad para programar va en el override.
+name: capstone
 
-  frontend-dev:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    container_name: capstone-frontend-dev
-    ports:
-      - "5173:5173"
+services:
+  # ---------------- Contenedor 1: PostgreSQL ----------------
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      # Crea el usuario/base al PRIMER arranque (datos iniciales).
+      POSTGRES_USER: ${PGUSER:-postgres}
+      POSTGRES_PASSWORD: ${PGPASSWORD:-postgres12345.}
+      POSTGRES_DB: ${PGDATABASE:-sigmave_database}
     volumes:
-      - .:/app
-      - /app/node_modules
-    command: npm run dev -- --host 0.0.0.0
+      # VOLUMEN con nombre: los datos PERSISTEN aunque borres el
+      # contenedor. Sin esto, al "down" perderias toda la base.
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER:-postgres} -d ${PGDATABASE:-sigmave_database}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ---------------- Contenedor 2: API (Express) ----------------
+  server:
+    # El "backend/Dockerfile" = imagen de produccion (node src/index.js).
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      # "db" es el nombre de servicio dentro de la red de Compose.
+      PGHOST: db
+      PGPORT: 5432
+      PGUSER: ${PGUSER:-postgres}
+      PGPASSWORD: ${PGPASSWORD:-postgres12345.}
+      PGDATABASE: ${PGDATABASE:-sigmave_database}
+      PORT: 3000
+      NODE_ENV: production
+    # No arranca hasta que postgres este sano (service_healthy).
+    depends_on:
+      db:
+        condition: service_healthy
+    # SIN "ports": la API no se publica al host. El unico acceso
+    # externo es via nginx (el servicio web del overlay de prod).
+
+# Volumen con nombre, declarado una sola vez y referido arriba.
+volumes:
+  pgdata:

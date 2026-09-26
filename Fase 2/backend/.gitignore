@@ -1,0 +1,12 @@
+# Dependencias
+node_modules/
+
+# Credenciales
+.env
+
+# Logs
+npm-debug.log*
+*.log
+
+# Sistema
+.DS_Store
