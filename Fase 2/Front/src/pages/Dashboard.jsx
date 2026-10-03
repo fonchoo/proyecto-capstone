@@ -28,7 +28,8 @@ const FORM_INICIAL = {
 export default function Dashboard() {
   const { theme } = useTheme();
   const t = themes[theme];
-  const { vehicles, user, addVehicle, selectedCompania, isAdmin } = useVehicles();
+  const { vehicles, user, addVehicle, selectedCompania, isAdmin, config } = useVehicles();
+  const diasAviso = config?.preventiva?.dias_aviso ?? 30;
 
   const [showForm, setShowForm] = useState(false);
   const [companias, setCompanias] = useState([]);
@@ -47,8 +48,10 @@ export default function Dashboard() {
   // Estado operativo (estado_vehiculo) y estado de la preventiva son
   // dos cosas distintas: un carro puede estar operativo con la
   // preventiva vencida.
+  // HU12: operativos, en mantención y no operativos, por separado.
   const operational = vehicles.filter((v) => v.status === "operational").length;
-  const outOfService = vehicles.length - operational;
+  const inMaintenance = vehicles.filter((v) => v.status === "warning").length;
+  const notOperational = vehicles.filter((v) => v.status === "critical").length;
   const preventiveSoon = vehicles.filter((v) => v.preventiveStatus === "proxima").length;
   const preventiveOverdue = vehicles.filter((v) => v.preventiveStatus === "vencida").length;
 
@@ -277,11 +280,24 @@ export default function Dashboard() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 mb-6 mt-6 lg:grid-cols-4">
-            <MetricCard value={operational} label="Operativos" accent="emerald" />
-            <MetricCard value={outOfService} label="Fuera de servicio" accent="red" />
-            <MetricCard value={preventiveSoon} label="Preventiva próxima" accent="amber" />
-            <MetricCard value={preventiveOverdue} label="Preventiva vencida" accent="red" />
+          <div className="mt-6 mb-6 space-y-4 lg:space-y-0 lg:grid lg:grid-cols-5 lg:gap-6">
+            {/* HU12: estado operativo de la flota (estado_vehiculo). */}
+            <section className="lg:col-span-3" aria-label="Estado de la flota">
+              <h2 className={t.label}>Estado de la flota</h2>
+              <div className="grid grid-cols-3 gap-3">
+                <MetricCard value={operational} label="Operativos" accent="emerald" />
+                <MetricCard value={inMaintenance} label="En mantención" accent="amber" />
+                <MetricCard value={notOperational} label="No operativos" accent="red" />
+              </div>
+            </section>
+            {/* HU09: vencimiento de la mantención preventiva. */}
+            <section className="lg:col-span-2" aria-label="Mantención preventiva">
+              <h2 className={t.label}>Mantención preventiva</h2>
+              <div className="grid grid-cols-2 gap-3">
+                <MetricCard value={preventiveSoon} label={`Próxima (${diasAviso} días)`} accent="amber" />
+                <MetricCard value={preventiveOverdue} label="Vencida" accent="red" />
+              </div>
+            </section>
           </div>
 
           <div className={`${t.card} overflow-hidden`}>
