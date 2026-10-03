@@ -33,3 +33,9 @@ body {
   background: #1f2937;
   border-radius: 2px;
 }
+/* Edge agrega su propio botón de "mostrar contraseña": se oculta para
+   no duplicar el ojo del login (pages/Login.jsx). */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}

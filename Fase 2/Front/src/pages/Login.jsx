@@ -3,7 +3,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { themes } from "../themeStyles.js";
 import { useTheme } from "../theme.jsx";
 import { useVehicles } from "../store.jsx";
-import { IcFlame } from "../components/Icons.jsx";
+import { IcEye, IcEyeOff, IcFlame } from "../components/Icons.jsx";
 
 export default function Login() {
   const { theme } = useTheme();
@@ -13,6 +13,8 @@ export default function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // Ojo para mostrar/ocultar lo que se escribe en la contraseña.
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -105,17 +107,32 @@ export default function Login() {
           </div>
           <div>
             <label className={t.label}>Contraseña</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                if (fieldErrors.password) setFieldErrors({ ...fieldErrors, password: "" });
-              }}
-              placeholder="Contraseña"
-              className={`${t.input} ${fieldErrors.password ? t.inputError : ""}`}
-              autoComplete="current-password"
-            />
+            <div className="relative">
+              <input
+                id="login-password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (fieldErrors.password) setFieldErrors({ ...fieldErrors, password: "" });
+                }}
+                placeholder="Contraseña"
+                className={`${t.input} ${fieldErrors.password ? t.inputError : ""} pr-12`}
+                autoComplete="current-password"
+              />
+              {/* type="button": alterna la visibilidad sin enviar el formulario. */}
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className={t.passwordToggle}
+                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                aria-controls="login-password"
+                aria-pressed={showPassword}
+                title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              >
+                {showPassword ? <IcEyeOff cls="w-5 h-5" /> : <IcEye cls="w-5 h-5" />}
+              </button>
+            </div>
             {fieldErrors.password && <p className={`${errorCls} mt-1`}>{fieldErrors.password}</p>}
           </div>
           {error && <p className={errorCls}>{error}</p>}

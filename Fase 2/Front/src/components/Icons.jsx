@@ -147,6 +147,28 @@ export function IcTool({ cls = "" }) {
   );
 }
 
+// Mostrar contraseña.
+export function IcEye({ cls = "" }) {
+  return (
+    <StrokeIcon cls={cls}>
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+      <circle cx="12" cy="12" r="3" />
+    </StrokeIcon>
+  );
+}
+
+// Ocultar contraseña.
+export function IcEyeOff({ cls = "" }) {
+  return (
+    <StrokeIcon cls={cls}>
+      <path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c6.5 0 10 7 10 7a18.5 18.5 0 0 1-2.16 3.19" />
+      <path d="M6.61 6.61A18.4 18.4 0 0 0 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.39-1.61" />
+      <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+      <line x1="2" y1="2" x2="22" y2="22" />
+    </StrokeIcon>
+  );
+}
+
 export function IcSun({ cls = "" }) {
   return (
     <StrokeIcon cls={cls}>
