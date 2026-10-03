@@ -1,0 +1,27 @@
+# Excluidos del CONTEXTO de build.
+# Reducen el tamaño enviado a Docker y evitan que las credenciales
+# entren a la imagen.
+
+# Dependencias: la imagen las reinstala con "npm ci" (Linux).
+node_modules
+
+# Credenciales: se inyectan por Compose como variables de entorno.
+.env
+.env.*
+!.env.example
+
+# Ruido.
+.git
+.gitignore
+.dockerignore
+*.log
+*.md
+*.png
+Dockerfile
+Dockerfile.dev
+docker-compose.yml
+docker-compose.override.yml
+
+# Supabase: la base la levanta la CLI en el HOST, no la API. Las
+# migraciones y el seed no se usan dentro de la imagen.
+supabase

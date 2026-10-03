@@ -1,0 +1,27 @@
+# ============================================================
+# .gitignore  (Backend SIGMAVE)
+# ============================================================
+# Regla numero uno: NUNCA versionar .env. Ahi vive el password de
+# la base. Si alguna vez se sube, hay que cambiarlo: asumilo
+# filtrado aunque el repo sea privado.
+# ============================================================
+
+# ---- Dependencias ----
+node_modules/
+
+# ---- Secretos ----
+# Todos los .env, pero la plantilla SI se versiona (es la doc de que
+# variables hacen falta y no tiene ningun valor real).
+.env
+.env.*
+!.env.example
+
+# ---- Logs ----
+*.log
+npm-debug.log*
+
+# ---- Sistema operativo / editores ----
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

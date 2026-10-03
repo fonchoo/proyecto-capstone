@@ -1,0 +1,25 @@
+# ============================================================
+# Dockerfile.dev  (API en modo DESARROLLO)
+# ============================================================
+# Corre con nodemon: reinicia solo al tocar el codigo. El codigo
+# "vivo" entra por el bind-mount de docker-compose.override.yml
+# (./:/app), asi que los cambios se ven SIN reconstruir la imagen.
+#
+# La imagen de PRODUCCION sigue siendo el "Dockerfile".
+
+FROM node:22-alpine
+
+WORKDIR /app
+
+# Manifiestos primero (cache de Docker).
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Copia el resto (lo que no excluye .dockerignore). En dev la imagen
+# se usa con bind-mount, pero asi queda funcional sola.
+COPY . .
+
+EXPOSE 3000
+
+# El --legacy-watch lo agrega el compose (polling para Windows/WSL2).
+CMD ["npm", "run", "dev"]

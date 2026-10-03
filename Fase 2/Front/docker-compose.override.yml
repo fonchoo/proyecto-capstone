@@ -1,0 +1,52 @@
+# ============================================================
+# docker-compose.override.yml  (DESARROLLO, autocargado)
+# ============================================================
+# Compose aplica ESTE archivo automaticamente cuando corres:
+#   docker compose up
+# ...y NO lo aplica cuando usas "-f" explicito (produccion).
+#
+# Es el lugar para TODO lo de comodidad de desarrollo:
+#   - hot reload (Vite + HMR)
+#   - bind-mounts (cambios de codigo sin rebuild)
+#   - puertos expuestos para programar
+#
+# Regla de oro: lo que vive aqui es DESARROLLO; produccion
+# nunca debe ver esta configuracion.
+
+services:
+  # Frontend con Vite: HMR (cambios al instante, sin recargar).
+  web-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: npm run dev
+    environment:
+      # ------------------------------------------------------------
+      # COMO LLEGA VITE A LA API
+      # ------------------------------------------------------------
+      # El front llama a "/api/..." (rutas relativas) y Vite las
+      # reenvia a VITE_API_PROXY (ver vite.config.js). La API vive en
+      # OTRO stack (Backend/) y publica su puerto 3000 en el HOST.
+      # Dentro del contenedor "localhost" es el propio contenedor,
+      # asi que hay que usar el alias "host.docker.internal".
+      VITE_API_PROXY: http://host.docker.internal:3000
+      # En Windows/WSL2 los bind-mounts no disparan eventos de
+      # archivos: hay que usar polling para que el HMR funcione.
+      # Lo lee vite.config.js (server.watch.usePolling).
+      VITE_USE_POLLING: "true"
+    # Ver el comentario en docker-compose.yml (servicio "web").
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      # Monta el codigo EN VIVO (bind-mount)...
+      - ./:/app
+      # ...pero node_modules NO se pisa con el del host Windows
+      # (binarios nativos incompatibles con Linux).
+      - /app/node_modules
+    ports:
+      # 5173 del host -> 5173 del contenedor.
+      - "5173:5173"
+
+  # En dev no levantamos el nginx de produccion: el puerto 8080
+  # queda libre. Para probarlo:
+  #   docker compose -f docker-compose.yml --profile prod up -d --build web
