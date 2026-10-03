@@ -3,7 +3,7 @@ import { jsPDF } from "jspdf";
 import { themes, getChartColors } from "../themeStyles.js";
 import { useTheme } from "../theme.jsx";
 import { useVehicles } from "../store.jsx";
-import { clp } from "../utils.js";
+import { clp, fecha } from "../utils.js";
 import PageHeader from "../components/PageHeader.jsx";
 import EmptyState from "../components/EmptyState.jsx";
 import { IcBarChart, IcDownload } from "../components/Icons.jsx";
@@ -88,15 +88,30 @@ export default function Reports() {
     return [
       { value: "all", label: "Todo el período" },
       ...claves.map((c) => ({ value: c, label: etiquetaMes(c) })),
+      // HU13: rango de fechas libre (los meses quedan como atajos, RF-27).
+      { value: "custom", label: "Rango personalizado…" },
     ];
   }, [maintenance]);
 
   const [period, setPeriod] = useState("all");
+  // Rango personalizado ("YYYY-MM-DD"; vacío = sin límite por ese lado).
+  const [desde, setDesde] = useState("");
+  const [hasta, setHasta] = useState("");
+  const isCustom = period === "custom";
+  const rangoInvalido = isCustom && desde && hasta && desde > hasta;
 
-  const filtered = useMemo(
-    () => (period === "all" ? maintenance : maintenance.filter((m) => mesClave(m.date) === period)),
-    [maintenance, period]
-  );
+  // La fecha de referencia es la de INGRESO de la mantención: una que
+  // entra el 28-09 y sale el 05-10 cuenta en septiembre.
+  const filtered = useMemo(() => {
+    if (period === "all") return maintenance;
+    if (period === "custom") {
+      if (rangoInvalido) return [];
+      return maintenance.filter(
+        (m) => (!desde || m.date >= desde) && (!hasta || m.date <= hasta)
+      );
+    }
+    return maintenance.filter((m) => mesClave(m.date) === period);
+  }, [maintenance, period, desde, hasta, rangoInvalido]);
 
   const total = filtered.reduce((s, m) => s + m.cost, 0);
 
@@ -111,7 +126,15 @@ export default function Reports() {
   const maxCost = sorted.length > 0 ? sorted[0].cost : 0;
   const hasData = filtered.length > 0 && perVehicle.length > 0;
 
-  const periodLabel = periodOptions.find((o) => o.value === period)?.label || "Todo el período";
+  const periodLabel = !isCustom
+    ? periodOptions.find((o) => o.value === period)?.label || "Todo el período"
+    : desde && hasta
+    ? `${fecha(desde)} al ${fecha(hasta)}`
+    : desde
+    ? `Desde ${fecha(desde)}`
+    : hasta
+    ? `Hasta ${fecha(hasta)}`
+    : "Todo el período";
 
   const formatFecha = (iso) => {
     const [y, m, d] = (iso || "").slice(0, 10).split("-").map(Number);
@@ -190,7 +213,12 @@ export default function Reports() {
       yy += 6;
     });
 
-    const nombre = period === "all" ? "reporte-costos" : `reporte-costos-${period}`;
+    const nombre =
+      period === "all"
+        ? "reporte-costos"
+        : isCustom
+        ? `reporte-costos-${desde || "inicio"}_${hasta || "hoy"}`
+        : `reporte-costos-${period}`;
     doc.save(`${nombre}.pdf`);
   };
 
@@ -205,31 +233,76 @@ export default function Reports() {
         }
       />
       <div className="px-4 pb-6 space-y-4 lg:px-8">
-        {!hasData ? (
-          <div className={t.card}>
-            <EmptyState
-              icon={<IcBarChart cls="w-7 h-7" />}
-              title="No hay datos para reportar"
-              subtitle={period === "all"
-                ? "Registra mantenciones para visualizar costos y gráficos."
-                : "No hay mantenciones para el período seleccionado."}
-            />
-          </div>
-        ) : (
-          <>
+        {maintenance.length > 0 && (
+          <div className="space-y-3">
             <div className="flex items-center gap-3">
-              <select value={period} onChange={(e) => setPeriod(e.target.value)} className={t.select}>
+              <select
+                value={period}
+                onChange={(e) => setPeriod(e.target.value)}
+                className={t.select}
+                aria-label="Período del reporte"
+              >
                 {periodOptions.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
                   </option>
                 ))}
               </select>
-              <button onClick={exportPDF} className={`${t.smallBtn} shrink-0`}>
+              <button
+                onClick={exportPDF}
+                disabled={!hasData}
+                className={`${t.smallBtn} shrink-0 disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
                 <IcDownload cls="w-4 h-4" />
                 Exportar PDF
               </button>
             </div>
+            {isCustom && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={t.label} htmlFor="rango-desde">Desde</label>
+                  <input
+                    id="rango-desde"
+                    type="date"
+                    value={desde}
+                    max={hasta || undefined}
+                    onChange={(e) => setDesde(e.target.value)}
+                    className={`${t.input} ${rangoInvalido ? t.inputError : ""}`}
+                  />
+                </div>
+                <div>
+                  <label className={t.label} htmlFor="rango-hasta">Hasta</label>
+                  <input
+                    id="rango-hasta"
+                    type="date"
+                    value={hasta}
+                    min={desde || undefined}
+                    onChange={(e) => setHasta(e.target.value)}
+                    className={`${t.input} ${rangoInvalido ? t.inputError : ""}`}
+                  />
+                </div>
+                <p className={`col-span-2 ${rangoInvalido ? (theme === "v1" ? "text-xs text-red-400" : "text-sm text-red-600") : t.histFooter}`}>
+                  {rangoInvalido
+                    ? "La fecha \"Desde\" no puede ser posterior a \"Hasta\"."
+                    : "Se consideran las mantenciones por su fecha de ingreso."}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!hasData ? (
+          <div className={t.card}>
+            <EmptyState
+              icon={<IcBarChart cls="w-7 h-7" />}
+              title="No hay datos para reportar"
+              subtitle={maintenance.length === 0
+                ? "Registra mantenciones para visualizar costos y gráficos."
+                : "No hay mantenciones para el período seleccionado."}
+            />
+          </div>
+        ) : (
+          <>
 
             <div className={`${t.card} p-5`}>
               <p className={t.totalLabel}>Costo total de mantenciones{period !== "all" ? ` · ${periodLabel}` : ""}</p>
