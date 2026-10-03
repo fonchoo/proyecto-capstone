@@ -1,0 +1,48 @@
+# ============================================================
+# docker-compose.yml  (BASE = produccion)
+# ============================================================
+# Archivo principal de Compose del FRONTEND. Define el stack con
+# postura de PRODUCCION: un unico servicio, "web", que sirve el
+# frontend ya compilado con nginx.
+#
+# La API y la base viven en OTRO stack (Backend/docker-compose.yml).
+# nginx reenvia /api al puerto 3000 que publica ese stack en el
+# host, via "host.docker.internal". Hay que levantar el Backend
+# PRIMERO.
+#
+# No hace falta "docker-compose.prod.yml": con la base sola (sin
+# -f hacia el override) YA se corre en produccion.
+#   dev  ->  docker compose up -d --build
+#            (Compose autocarga docker-compose.override.yml)
+#   prod ->  docker compose -f docker-compose.yml --profile prod up -d --build
+#            (con -f explicito NO se carga el override)
+
+# Si no se declara, Compose deduce el nombre del stack de la CARPETA
+# ("front", y el contenedor seria "front-web-dev-1"). Fijarlo aca
+# desacopla la identidad del stack de donde este el codigo.
+name: capstone-web
+
+services:
+  # ---------------- Contenedor: nginx (frontend) ----------------
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: capstone-web
+    restart: unless-stopped
+    # Perfil "prod": este servicio NO arranca en el dev normal.
+    # Sin esto, "docker compose up" levantaria web (nginx) Y
+    # web-dev (Vite) a la vez. Con el perfil hay que pedirlo:
+    #   docker compose -f docker-compose.yml --profile prod up -d --build
+    # (nombrar el servicio explicitamente tambien lo activa:
+    #  docker compose up web)
+    profiles:
+      - prod
+    # Docker Desktop (Windows/Mac) ya define host.docker.internal;
+    # en Linux hay que agregarlo a mano. Con esto anda en los dos.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      # 8080 del host -> 80 del contenedor: UNICA puerta de entrada
+      # del frontend en produccion.
+      - "8080:80"

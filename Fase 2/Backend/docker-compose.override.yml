@@ -1,0 +1,46 @@
+# ============================================================
+# docker-compose.override.yml  (DESARROLLO, autocargado)
+# ============================================================
+# Compose aplica ESTE archivo automaticamente cuando corres:
+#   docker compose up
+# ...y NO lo aplica cuando usas "-f" explicito (produccion).
+#
+# Es el lugar para TODO lo de comodidad de desarrollo:
+#   - hot reload (nodemon)
+#   - bind-mounts (cambios de codigo sin rebuild)
+#
+# El esquema y los datos iniciales ya NO se cargan aca: los aplica
+# Supabase desde supabase/migrations/ y supabase/seed.sql.
+#
+# Regla de oro: lo que vive aca es DESARROLLO; produccion nunca
+# debe ver esta configuracion.
+
+services:
+  # El mismo servicio "server" de la base, reconfigurado para dev.
+  server:
+    # Imagen SOLO para dev: nodemon reinicia al tocar codigo.
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    # Nombre propio: sin esto heredaria "capstone-api" de la base y
+    # pisaria la imagen de produccion.
+    image: capstone-api-dev
+    command: npm run dev -- --legacy-watch
+    environment:
+      # Pisa el NODE_ENV=production de la base.
+      NODE_ENV: development
+      # Las variables de conexion a Supabase se heredan de la base:
+      # ya apuntan a host.docker.internal y no hay que repetirlas.
+    volumes:
+      # Monta el codigo EN VIVO (bind-mount)...
+      - ./:/app
+      # ...pero node_modules NO se pisa con el del host Windows
+      # (binarios nativos incompatibles con Linux).
+      - /app/node_modules
+    # El puerto 3000 ya esta publicado en la base; no hace falta
+    # redeclararlo aca (Compose fusiona los dos archivos).
+    #
+    # OJO: el bind-mount mete el .env del host dentro del contenedor,
+    # pero sus valores NO pisan los del compose (dotenv no sobreescribe
+    # variables ya definidas en el entorno). Por eso el PGHOST=localhost
+    # del .env no rompe nada: gana el host.docker.internal del compose.

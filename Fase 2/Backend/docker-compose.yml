@@ -1,0 +1,81 @@
+# ============================================================
+# docker-compose.yml  (BASE = produccion)
+# ============================================================
+# Archivo principal de Compose del BACKEND, con postura de
+# PRODUCCION: la API (node src/index.js), sin watchers, publicando
+# un solo puerto.
+#
+# Aca NO hay servicio de base de datos. La base es Supabase y la
+# levanta su propia CLI ("npx supabase start" desde esta carpeta, que
+# crea su propio grupo de contenedores "supabase_*_sigmave").
+# Duplicar Postgres aca seria tener dos bases sin sincronizar, asi
+# que la API se conecta por la red del host (host.docker.internal).
+#
+# El frontend tiene su PROPIO compose en Front/ (stack separado) y
+# llega a esta API por el puerto 3000 del host.
+#
+# Orden de arranque: Supabase -> este stack -> Front.
+#   dev  ->  docker compose up -d --build
+#            (Compose autocarga docker-compose.override.yml)
+#   prod ->  docker compose -f docker-compose.yml up -d --build
+#            (con -f explicito NO se carga el override)
+#
+# Las credenciales de Postgres se leen del ".env" de esta carpeta
+# (plantilla en .env.example). Si no estan, se usan los defaults de
+# Supabase local (postgres/postgres, base "postgres", puerto 55322).
+
+# Si no se declara, Compose deduce el nombre del stack de la CARPETA
+# ("backend"). Fijarlo desacopla la identidad del stack (contenedores,
+# redes) de donde este el codigo.
+name: capstone-api
+
+services:
+  # ---------------- Contenedor: API (Express) ----------------
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # El override construye OTRA imagen (Dockerfile.dev) para este
+    # mismo servicio y le pone "capstone-api-dev". Si las dos tuvieran
+    # el mismo nombre, la de dev y la de prod se pisarian.
+    image: capstone-api
+    restart: unless-stopped
+    environment:
+      # ------------------------------------------------------------
+      # CONEXION A SUPABASE LOCAL
+      # ------------------------------------------------------------
+      # "supabase start" publica Postgres en el 55322 del HOST (ver
+      # supabase/config.toml). Dentro del contenedor "localhost" es el
+      # propio contenedor, asi que hay que usar "host.docker.internal".
+      #
+      # Estas variables TIENEN PRECEDENCIA sobre el .env: dotenv no
+      # pisa variables que ya existen en el entorno. Por eso el
+      # PGHOST=localhost del .env (dev sin Docker) no rompe nada.
+      #
+      # Para apuntar a OTRA base (p. ej. Supabase en la nube), definir
+      # PGHOST_DOCKER en el .env.
+      PGHOST: ${PGHOST_DOCKER:-host.docker.internal}
+      PGPORT: ${PGPORT:-55322}
+      PGUSER: ${PGUSER:-postgres}
+      PGPASSWORD: ${PGPASSWORD:-postgres}
+      PGDATABASE: ${PGDATABASE:-postgres}
+      PORT: 3000
+      NODE_ENV: production
+
+      # ------------------------------------------------------------
+      # SESIÓN (JWT)
+      # ------------------------------------------------------------
+      # OBLIGATORIA: usa ${VAR:?mensaje}. Si falta, "docker compose up"
+      # falla con un mensaje claro en lugar de arrancar sin poder
+      # firmar sesiones. Se lee del .env de esta carpeta.
+      JWT_SECRET: ${JWT_SECRET:?Falta JWT_SECRET en el .env de Backend/ (ver .env.example)}
+      # "true" al publicar detrás de HTTPS (cookie solo por HTTPS).
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    # Docker Desktop (Windows/Mac) ya define host.docker.internal;
+    # en Linux hay que agregarlo a mano. Con esto anda en los dos.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      # 3000 del host -> 3000 del contenedor. El front (otro stack)
+      # llega por aca via host.docker.internal:3000.
+      - "3000:3000"

@@ -1,0 +1,26 @@
+# Excluidos del CONTEXTO de build.
+# Reducen el tamaño enviado a Docker y evitan que las credenciales
+# entren a la imagen.
+
+# Dependencias: la imagen las reinstala con "npm ci" (Linux).
+node_modules
+
+# Build local: la imagen compila su propio dist/ dentro del
+# contenedor.
+dist
+.vite
+
+# Credenciales SIEMPRE fuera de la imagen.
+.env
+.env.*
+!.env.example
+
+# Ruido.
+.git
+.gitignore
+.dockerignore
+*.md
+*.log
+.DS_Store
+docker-compose.yml
+docker-compose.override.yml

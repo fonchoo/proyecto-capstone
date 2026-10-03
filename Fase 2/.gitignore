@@ -1,7 +1,36 @@
-node_modules
-dist
-.vite
-*.log
+# ============================================================
+# .gitignore raiz de Fase 2 (SIGMAVE)
+# ============================================================
+# Cada proyecto (Front/ y Backend/) tiene ademas su propio
+# .gitignore. Este archivo es el cinturon de seguridad comun: cubre
+# lo que queda en la raiz y lo que se cuela de los dos proyectos.
+# ============================================================
+
+# ---- Dependencias (no se versionan, se reinstalan con npm ci) ----
+node_modules/
+
+# ---- Build del frontend ----
+Front/dist/
+Front/.vite/
+
+# ---- Secretos: NUNCA versionar ----
+# La plantilla .env.example SI se versiona: es la doc de que
+# variables hacen falta.
 .env
 .env.*
+!.env.example
+
+# ---- Supabase local (lo crea la CLI, es estado de la maquina) ----
+Backend/supabase/.temp/
+Backend/supabase/.branches/
+
+# ---- Logs ----
+*.log
+npm-debug.log*
+
+# ---- Sistema operativo / editores ----
 .DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
