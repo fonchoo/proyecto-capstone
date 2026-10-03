@@ -7,6 +7,12 @@ export function fecha(iso) {
   return `${d}-${m}-${y}`;
 }
 
+// Hoy en Chile como "YYYY-MM-DD" (misma referencia que la API para
+// validar que una fecha de salida no sea futura).
+export function hoyChile() {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Santiago" }).format(new Date());
+}
+
 // Suma meses a una fecha "YYYY-MM-DD" igual que Postgres
 // ("+ interval 'N months'"): si el día no existe en el mes destino,
 // usa el último día. 2026-08-31 + 6 -> 2027-02-28.

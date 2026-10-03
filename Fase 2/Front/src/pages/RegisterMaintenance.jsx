@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, Navigate } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams, Navigate } from "react-router-dom";
 import { themes } from "../themeStyles.js";
 import { useTheme } from "../theme.jsx";
 import { useVehicles } from "../store.jsx";
 import PageHeader from "../components/PageHeader.jsx";
-import { clp, fecha, sumarMeses } from "../utils.js";
+import { clp, fecha, hoyChile, sumarMeses } from "../utils.js";
 
 const FORM_INICIAL = {
   fecha_ingreso: "",
@@ -27,6 +27,12 @@ export default function RegisterMaintenance() {
 
   const [tipos, setTipos] = useState([]);
   const [idTipo, setIdTipo] = useState("");
+  // HU07: reporte de falla DERIVADO que resuelve esta mantención.
+  // Llega preseleccionado desde el panel de fallas (?reporte=N).
+  const [searchParams] = useSearchParams();
+  const reporteInicial = searchParams.get("reporte") || "";
+  const [idReporte, setIdReporte] = useState(reporteInicial);
+  const [reportesDerivados, setReportesDerivados] = useState([]);
   const [form, setForm] = useState(FORM_INICIAL);
   const [fieldErrors, setFieldErrors] = useState({});
   const [formError, setFormError] = useState("");
@@ -42,13 +48,28 @@ export default function RegisterMaintenance() {
       .then((rows) => {
         if (!mounted) return;
         setTipos(rows);
-        if (rows.length > 0) setIdTipo(String(rows[0].id_tipo_mantencion));
+        // Si viene de un reporte de falla, la mantención es reactiva.
+        const reactiva = rows.find((tp) => tp.nombre === "reactiva");
+        if (reporteInicial && reactiva) setIdTipo(String(reactiva.id_tipo_mantencion));
+        else if (rows.length > 0) setIdTipo(String(rows[0].id_tipo_mantencion));
       })
       .catch(() => {});
     return () => {
       mounted = false;
     };
   }, []);
+
+  // Reportes derivados del vehículo que todavía no tienen mantención.
+  useEffect(() => {
+    let mounted = true;
+    fetch(`/api/fallas?id_vehiculo=${id}&estado=derivado`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows) => mounted && setReportesDerivados(rows.filter((r) => !r.id_mantencion)))
+      .catch(() => mounted && setReportesDerivados([]));
+    return () => {
+      mounted = false;
+    };
+  }, [id]);
 
   if (!vehicle) return vehiclesLoaded ? <Navigate to="/dashboard" replace /> : null;
 
@@ -65,6 +86,18 @@ export default function RegisterMaintenance() {
     avisoPreventiva = "Las mantenciones reactivas no reinician el plazo de la preventiva.";
   }
 
+  // Solo una mantención reactiva resuelve reportes de falla.
+  const esReactiva = tipoElegido?.nombre === "reactiva";
+  const reporteElegido = esReactiva ? idReporte : "";
+
+  // Qué pasará con el vehículo al guardar (lo decide la API, ver
+  // Backend/src/estadoVehiculo.js).
+  const avisoVehiculo = !form.fecha_salida
+    ? "Sin fecha de salida, la mantención queda en proceso y el vehículo pasa a \"En mantención\". Podrás finalizarla desde el detalle del vehículo."
+    : reporteElegido
+    ? "La falla quedará resuelta y el vehículo volverá a \"Operativo\" si no tiene otras fallas ni mantenciones abiertas."
+    : "La mantención quedará finalizada.";
+
   // Vista previa del total (la API hace el mismo cálculo al guardar).
   const costoTotal =
     (Number(form.costo_repuestos) || 0) + (Number(form.mano_obra) || 0);
@@ -79,6 +112,9 @@ export default function RegisterMaintenance() {
     const errors = {};
     if (!form.fecha_ingreso) {
       errors.fecha_ingreso = "La fecha es obligatoria";
+    }
+    if (form.fecha_salida && form.fecha_salida > hoyChile()) {
+      errors.fecha_salida = "La fecha de salida no puede ser futura";
     }
     if (form.fecha_salida && form.fecha_ingreso && form.fecha_salida < form.fecha_ingreso) {
       errors.fecha_salida = "La fecha de salida no puede ser anterior al ingreso";
@@ -121,6 +157,7 @@ export default function RegisterMaintenance() {
         mano_obra: form.mano_obra ? Number(form.mano_obra) : null,
         id_vehiculo: Number(vehicle.id),
         id_tipo_mantencion: Number(idTipo),
+        id_reporte_falla: reporteElegido ? Number(reporteElegido) : null,
         // El responsable lo pone la API con el usuario de la sesión.
       });
       navigate(`/vehiculos/${vehicle.id}`);
@@ -166,6 +203,27 @@ export default function RegisterMaintenance() {
             </select>
           </div>
 
+          {esReactiva && reportesDerivados.length > 0 && (
+            <div>
+              <label className={t.label} htmlFor="reporte-falla">
+                Reporte de falla que resuelve (opcional)
+              </label>
+              <select
+                id="reporte-falla"
+                value={idReporte}
+                onChange={(e) => setIdReporte(e.target.value)}
+                className={t.select}
+              >
+                <option value="">Ninguno</option>
+                {reportesDerivados.map((r) => (
+                  <option key={r.id_reporte_falla} value={r.id_reporte_falla}>
+                    {`N° ${r.id_reporte_falla} · urgencia ${r.urgencia} · ${r.descripcion.slice(0, 60)}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={t.label}>Fecha de ingreso *</label>
@@ -184,6 +242,7 @@ export default function RegisterMaintenance() {
               <input
                 type="date"
                 value={form.fecha_salida}
+                max={hoyChile()}
                 onChange={set("fecha_salida")}
                 className={`${t.input} ${fieldErrors.fecha_salida ? t.inputError : ""}`}
               />
@@ -198,6 +257,9 @@ export default function RegisterMaintenance() {
               {avisoPreventiva}
             </p>
           )}
+          <p className={t.detailBrand} aria-live="polite">
+            {avisoVehiculo}
+          </p>
 
           <div>
             <label className={t.label}>Kilometraje de ingreso (km)</label>

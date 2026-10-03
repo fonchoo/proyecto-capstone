@@ -73,6 +73,13 @@ export const themes = {
     saveMaintBtn: "w-full py-4 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold rounded-xl transition-colors text-sm mt-2",
     backDashBtn: "w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors text-sm",
     smallBtn: "flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium transition-colors",
+    // Botón secundario (acciones dentro de una fila: derivar, finalizar...).
+    secondaryBtn: "inline-flex items-center justify-center gap-1.5 px-3 py-1.5 border border-gray-700 hover:bg-gray-800 text-gray-200 rounded-lg text-xs font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap",
+    // Contador de pendientes en la navegación (aviso dentro de la app).
+    navBadge: "inline-flex items-center justify-center min-w-[1.125rem] h-[1.125rem] px-1 rounded-full bg-red-600 text-white text-[10px] font-bold leading-none",
+    // Etiqueta de estado: "warning" (en proceso/pendiente), "info" (derivado), "ok" (finalizada/resuelto).
+    stateChip: (tono) =>
+      `text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${tono === "warning" ? "bg-amber-500/10 text-amber-400" : tono === "info" ? "bg-blue-500/10 text-blue-400" : tono === "ok" ? "bg-emerald-500/10 text-emerald-400" : "bg-gray-800 text-gray-400"}`,
     cancelBtn: "px-5 py-3 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-xl text-sm transition-colors",
     saveUserBtn: "flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold transition-colors",
     typeBtn: (active) =>
@@ -221,6 +228,10 @@ export const themes = {
     saveMaintBtn: "w-full py-4 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-xl transition-colors text-sm mt-2",
     backDashBtn: "w-full py-3.5 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-xl transition-colors text-sm",
     smallBtn: "flex items-center gap-2 px-4 py-2.5 bg-gray-900 hover:bg-gray-800 text-white rounded-xl text-sm font-medium transition-colors",
+    secondaryBtn: "inline-flex items-center justify-center gap-1.5 px-3 py-1.5 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg text-xs font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap",
+    navBadge: "inline-flex items-center justify-center min-w-[1.125rem] h-[1.125rem] px-1 rounded-full bg-red-600 text-white text-[10px] font-bold leading-none",
+    stateChip: (tono) =>
+      `text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${tono === "warning" ? "bg-amber-50 text-amber-700" : tono === "info" ? "bg-blue-50 text-blue-700" : tono === "ok" ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-600"}`,
     cancelBtn: "px-5 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-sm transition-colors",
     saveUserBtn: "flex-1 py-3 bg-gray-900 hover:bg-gray-800 text-white rounded-xl text-sm font-semibold transition-colors",
     typeBtn: (active) =>

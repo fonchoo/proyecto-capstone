@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { fecha } from "./utils.js";
+import { canDeriveFault } from "./permissions.js";
 
 const VehicleContext = createContext(null);
 
@@ -53,6 +54,10 @@ const mapMaintenance = (m) => ({
   labor: Number(m.mano_obra) || 0,
   description: m.detalle_trabajo || "",
   workshop: m.proveedor || "—",
+  // Ciclo (HU07): "en_proceso" sin fecha de salida, "finalizada" con ella.
+  status: m.estado_mantencion,
+  exitDate: m.fecha_salida,
+  linkedReports: m.reportes_asociados || 0,
 });
 
 export function VehicleProvider({ children }) {
@@ -63,6 +68,9 @@ export function VehicleProvider({ children }) {
   // redirigían al dashboard mientras la lista seguía vacía.
   const [vehiclesLoaded, setVehiclesLoaded] = useState(false);
   const [maintenance, setMaintenance] = useState([]);
+  // Reportes de falla abiertos (pendientes y derivados): alimentan el
+  // panel de fallas y el contador de la navegación (HU05/HU06).
+  const [openFaults, setOpenFaults] = useState([]);
   const [user, setUser] = useState(null);
   // true mientras se consulta /api/auth/me al cargar la app.
   const [loadingSession, setLoadingSession] = useState(true);
@@ -111,6 +119,21 @@ export function VehicleProvider({ children }) {
     }
   };
 
+  const refreshFaults = async () => {
+    if (!canDeriveFault(user?.nombre_rol)) {
+      setOpenFaults([]);
+      return;
+    }
+    try {
+      const sep = companiaQuery ? "&" : "?";
+      const res = await fetch(`/api/fallas${companiaQuery}${sep}estado=pendiente,derivado`);
+      if (handleUnauthorized(res) || !res.ok) return;
+      setOpenFaults(await res.json());
+    } catch {
+      // Sin conexión no cambia la lista actual.
+    }
+  };
+
   // Al cargar: ¿sigue habiendo sesión?
   useEffect(() => {
     fetch("/api/auth/me")
@@ -143,11 +166,32 @@ export function VehicleProvider({ children }) {
     if (!user) {
       setVehicles([]);
       setMaintenance([]);
+      setOpenFaults([]);
       return;
     }
     refreshVehicles();
     refreshMaintenance();
+    refreshFaults();
   }, [user?.id_usuario, companiaQuery]);
+
+  // Recarga todo lo que puede cambiar con el flujo falla -> mantención
+  // (el estado del vehículo lo recalcula la API en cada paso).
+  const refreshAll = () =>
+    Promise.all([refreshVehicles(), refreshMaintenance(), refreshFaults()]);
+
+  // fetch JSON con manejo de errores común: lanza Error con el mensaje
+  // de la API (o "porDefecto").
+  const enviar = async (url, method, data, porDefecto) => {
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: data === undefined ? undefined : JSON.stringify(data),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (handleUnauthorized(res)) throw new Error("La sesión expiró");
+    if (!res.ok) throw new Error(body.error || porDefecto);
+    return body;
+  };
 
   const addVehicle = async (data) => {
     const res = await fetch("/api/vehiculos", {
@@ -173,31 +217,45 @@ export function VehicleProvider({ children }) {
     if (!res.ok) {
       throw new Error(body.error || "No se pudo registrar la mantención");
     }
-    await refreshVehicles();
-    await refreshMaintenance();
+    await refreshAll();
+    return body;
+  };
+
+  // Reporte de falla: la API lo guarda y recalcula el estado del
+  // vehículo en la misma transacción.
+  const reportFault = async (data) => {
+    const body = await enviar("/api/fallas", "POST", data, "No se pudo enviar el reporte de falla");
+    await refreshAll();
+    return body;
+  };
+
+  // HU06: el Teniente Tercero (o superior) deriva un reporte pendiente.
+  const deriveFault = async (idReporte) => {
+    const body = await enviar(
+      `/api/fallas/${idReporte}/derivar`,
+      "PATCH",
+      undefined,
+      "No se pudo derivar el reporte"
+    );
+    await refreshFaults();
+    return body;
+  };
+
+  // HU07: registra la salida de una mantención en proceso. La API
+  // resuelve sus reportes y vuelve el vehículo a operativo si corresponde.
+  const finishMaintenance = async (idMantencion, fechaSalida) => {
+    const body = await enviar(
+      `/api/mantenimientos/${idMantencion}/finalizar`,
+      "PATCH",
+      { fecha_salida: fechaSalida },
+      "No se pudo finalizar la mantención"
+    );
+    await refreshAll();
     return body;
   };
 
   // La cookie ya la dejó la API en la respuesta del login; acá solo
   // se guardan los datos del usuario para la UI.
-  // Reporte de falla: la API lo guarda y deja el vehículo
-  // "no_operativo" en la misma transacción. Se recargan los vehículos
-  // para mostrar el estado real de la base.
-  const reportFault = async (data) => {
-    const res = await fetch("/api/fallas", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    const body = await res.json().catch(() => ({}));
-    if (handleUnauthorized(res)) throw new Error("La sesión expiró");
-    if (!res.ok) {
-      throw new Error(body.error || "No se pudo enviar el reporte de falla");
-    }
-    await refreshVehicles();
-    return body;
-  };
-
   const login = (userData) => {
     setSelectedCompania("");
     setUser(userData);
@@ -231,6 +289,10 @@ export function VehicleProvider({ children }) {
         addVehicle,
         addMaintenance,
         reportFault,
+        openFaults,
+        refreshFaults,
+        deriveFault,
+        finishMaintenance,
       }}
     >
       {children}

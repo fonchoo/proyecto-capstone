@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { themes } from "../themeStyles.js";
 import { useTheme } from "../theme.jsx";
 import { useVehicles } from "../store.jsx";
-import { canViewTab } from "../permissions.js";
+import { canViewTab, faultBadgeCount } from "../permissions.js";
 import { IcFlame, IcLogOut, IcMoon, IcSun } from "./Icons.jsx";
 
 export default function TopNav() {
@@ -18,7 +18,9 @@ export default function TopNav() {
     companias,
     selectedCompania,
     setSelectedCompania,
+    openFaults,
   } = useVehicles();
+  const faultCount = faultBadgeCount(user?.nombre_rol, openFaults);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
@@ -37,6 +39,8 @@ export default function TopNav() {
     ? "vehicles"
     : pathname.startsWith("/alertas")
     ? "alerts"
+    : pathname.startsWith("/fallas")
+    ? "faults"
     : pathname.startsWith("/reportes")
     ? "reports"
     : pathname.startsWith("/usuarios")
@@ -45,6 +49,7 @@ export default function TopNav() {
 
   const items = [
     { id: "dashboard", label: "Dashboard", to: "/dashboard" },
+    { id: "faults", label: "Fallas", to: "/fallas" },
     { id: "alerts", label: "Alertas", to: "/alertas" },
     { id: "reports", label: "Reportería y Costos", to: "/reportes" },
     { id: "users", label: "Usuarios", to: "/usuarios" },
@@ -85,6 +90,11 @@ export default function TopNav() {
             className={t.navBtn(item.id === activeTab || (item.id === "dashboard" && activeTab === "vehicles"))}
           >
             {item.label}
+            {item.id === "faults" && faultCount > 0 && (
+              <span className={`${t.navBadge} ml-1.5`} aria-label={`${faultCount} por atender`}>
+                {faultCount}
+              </span>
+            )}
           </Link>
         ))}
       </nav>
