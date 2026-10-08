@@ -1,0 +1,16 @@
+ nomenclatura |     compania     | estado_vehiculo 
+--------------+------------------+-----------------
+ B-1          | Primera compañia | no_operativo
+ R-1          | Primera compañia | en_mantencion
+ B-2          | Segunda Compañía | operativo
+ B-9          | Primera compañia | no_operativo
+ BX-1         | Primera compañia | operativo
+(5 rows)
+
+ estado_vehiculo | count 
+-----------------+-------
+ en_mantencion   |     1
+ no_operativo    |     2
+ operativo       |     2
+(3 rows)
+

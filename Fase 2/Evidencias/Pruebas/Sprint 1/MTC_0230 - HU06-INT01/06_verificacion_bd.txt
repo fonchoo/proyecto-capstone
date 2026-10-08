@@ -1,0 +1,19 @@
+MTC_0230 - HU06-INT01: Integrar derivación con notificación al Inspector
+Fecha de ejecución: 08-10-2026
+Reporte usado: N° 6 (BX-1, urgencia alta), creado en MTC_0220 (HU05-INT01)
+
+1) teniente.c1 (id_usuario = 4) presiona "Derivar al Inspector" en el N° 6.
+   -> Pasa a "Derivados al Inspector" con "Derivado por Teniente Primera · 08-10-26, 11:10 a. m."
+   -> Panel: "4 pendientes · 2 derivados" (captura 01)
+
+2) Tabla reporte_falla en Supabase Studio (capturas 02 y 03) y consulta:
+select r.id_reporte_falla, v.nomenclatura, r.estado_reporte, to_char(r.fecha_derivacion at time zone 'America/Santiago','DD-MM-YYYY HH24:MI:SS') as fecha_derivacion_chile, r.id_usuario_deriva, u.email as deriva_email, r.id_mantencion from reporte_falla r join vehiculo v using (id_vehiculo) left join usuario u on u.id_usuario = r.id_usuario_deriva where r.id_reporte_falla = 6
+ id_reporte_falla | nomenclatura | estado_reporte | fecha_derivacion_chile | id_usuario_deriva |      deriva_email      | id_mantencion 
+------------------+--------------+----------------+------------------------+-------------------+------------------------+---------------
+                6 | BX-1         | derivado       | 08-10-2026 11:10:15    |                 4 | teniente.c1@sigmave.cl |              
+(1 row)
+   (En Studio la fecha se ve en UTC: 2026-10-08 14:10:15 = 11:10:15 hora de Chile.)
+
+3) inspector.c1: contador de la pestaña "Fallas" = 2 (antes de esta prueba era 1: solo el N° 2 de B-9).
+   "Derivados al Inspector" muestra B-9 (N° 2) y BX-1 (N° 6), ambos con "Registrar mantención"
+   (capturas 04 y 05).

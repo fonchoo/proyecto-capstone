@@ -1,0 +1,31 @@
+MTC_0220 - HU05-INT01: Integrar reporte de falla con estado del vehículo y aviso al Teniente
+Fecha de ejecución: 08-10-2026
+Vehículo usado: BX-1 (id_vehiculo = 11, Primera compañía). Se usó BX-1 porque era el único
+vehículo Operativo de la Primera (B-1 ya estaba No Operativo por pruebas anteriores).
+Usuario que reporta: bombero.c1@sigmave.cl (id_usuario = 3)
+
+Antes del reporte:
+  BX-1 -> operativo, 0 reportes; último id_reporte_falla = 5
+
+1) Reporte enviado desde el front: N° 6, urgencia Alta, "Falla en sistema de frenos"
+
+2) Tabla reporte_falla (Supabase Studio, capturas 03 y 04) y consulta:
+select r.id_reporte_falla, r.urgencia, r.descripcion, r.estado_reporte, r.id_vehiculo, v.nomenclatura, r.id_usuario, u.email from reporte_falla r join vehiculo v using (id_vehiculo) join usuario u on u.id_usuario = r.id_usuario where r.id_reporte_falla = 6
+ id_reporte_falla | urgencia |        descripcion         | estado_reporte | id_vehiculo | nomenclatura | id_usuario |         email         
+------------------+----------+----------------------------+----------------+-------------+--------------+------------+-----------------------
+                6 | alta     | Falla en sistema de frenos | pendiente      |          11 | BX-1         |          3 | bombero.c1@sigmave.cl
+(1 row)
+
+3) Tabla vehiculo (Supabase Studio, capturas 05 y 06) y consulta:
+select id_vehiculo, nomenclatura, estado_vehiculo from vehiculo where id_vehiculo = 11
+ id_vehiculo | nomenclatura | estado_vehiculo 
+-------------+--------------+-----------------
+          11 | BX-1         | no_operativo
+(1 row)
+
+4) Ambos cambios en la misma operación: Backend/src/routes/fallas.js (POST /api/fallas)
+   ejecuta el INSERT en reporte_falla y recalcularEstadoVehiculo() dentro de
+   enTransaccion(pool, ...) (líneas 135-144): si una falla, se revierten las dos.
+
+5) Panel del Teniente (teniente.c1): el reporte de BX-1 aparece en "Pendientes de derivar"
+   (Alta, entre los reportes Alta por antigüedad); contador de la pestaña = 5 (captura 07).

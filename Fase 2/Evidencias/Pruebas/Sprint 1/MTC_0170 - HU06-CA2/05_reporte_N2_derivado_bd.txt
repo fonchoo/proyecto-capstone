@@ -1,0 +1,5 @@
+ n | nomenclatura | urgencia | estado_reporte |   derivado_por   | fecha_derivacion_chile | id_mantencion 
+---+--------------+----------+----------------+------------------+------------------------+---------------
+ 2 | B-9          | alta     | derivado       | Teniente Primera | 08-10-2026 10:04:39    |              
+(1 row)
+

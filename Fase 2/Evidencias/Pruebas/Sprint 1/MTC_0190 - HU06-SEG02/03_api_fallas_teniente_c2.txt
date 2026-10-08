@@ -1,0 +1,26 @@
+MTC_0190 - HU06-SEG02: Validar que un Teniente no vea reportes de otra compañía
+Fecha de ejecución: 08-10-2026
+Usuario: teniente.c2@sigmave.cl (rol teniente_tercero, Segunda compañía, id_compania = 2)
+
+1) Barra de navegación: la pestaña "Fallas" aparece SIN contador
+   (ver 01_teniente_c2_pestana_fallas_sin_contador.jpg)
+
+2) Pestaña Fallas (/fallas):
+   "0 pendientes · 0 derivados"
+   Pendientes de derivar: "Sin reportes pendientes"
+   Derivados al Inspector: "Sin reportes derivados"
+   (ver 02_teniente_c2_fallas_sin_reportes.jpg)
+
+3) Peticiones a la API con la cookie de sesión de teniente.c2 (fetch desde la misma pestaña):
+   GET /api/fallas                -> 200 []
+   GET /api/fallas?id_vehiculo=1  -> 200 []
+   GET /api/fallas/1              -> 404 {"error":"Reporte de falla no encontrado"}
+
+4) Reportes existentes en la base de datos (psql, supabase_db_sigmave), por compañía y estado:
+ id_compania | estado_reporte | count 
+-------------+----------------+-------
+           1 | derivado       |     1
+           1 | pendiente      |     4
+(2 rows)
+   -> Existen reportes de la Primera compañía (incluido el N° 1 de B-1),
+      pero ninguno es visible para el Teniente de la Segunda.

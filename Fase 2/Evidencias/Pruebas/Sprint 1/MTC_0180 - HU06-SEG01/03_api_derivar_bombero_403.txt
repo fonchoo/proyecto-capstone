@@ -1,0 +1,23 @@
+MTC_0180 - HU06-SEG01: Validar que un bombero no pueda acceder al panel de fallas ni derivar
+Fecha de ejecución: 08-10-2026
+Usuario: bombero.c1@sigmave.cl (rol bombero, Primera compañía)
+Reporte usado: N° 1 (B-1, urgencia alta, estado pendiente)
+
+1) Barra de navegación con sesión de bombero.c1:
+   Enlaces visibles: "Dashboard -> /dashboard", "Alertas -> /alertas"
+   No existe ningún enlace a /fallas (ver 01_bombero_sin_pestana_fallas.jpg)
+
+2) Navegador: http://localhost:5173/fallas
+   -> Redirige a /dashboard (ver 02_url_fallas_redirige_a_dashboard.jpg)
+
+3) Petición a la API con la cookie de sesión de bombero.c1 (fetch desde la misma pestaña):
+   PATCH /api/fallas/1/derivar
+
+   Respuesta:
+   HTTP 403 Forbidden
+   {"error":"No tienes permisos para esta acción"}
+
+4) Verificación en la base de datos (psql, supabase_db_sigmave), después de la petición:
+   select r.id_reporte_falla, v.nomenclatura, r.estado_reporte, r.id_usuario_deriva, r.fecha_derivacion from reporte_falla r join vehiculo v using (id_vehiculo) where r.id_reporte_falla = 1
+   -> 1|B-1|pendiente||
+   El reporte N° 1 sigue "pendiente", sin usuario ni fecha de derivación.

@@ -1,0 +1,20 @@
+MTC_0240 - HU05-E2E01: Flujo completo de reporte y derivación de una falla
+Fecha de ejecución: 08-10-2026
+Vehículo: B-1 (Primera compañía). Urgencia Alta. Descripción: "Sobrecalentamiento del motor en ralenti"
+
+Precondición: todas las sesiones cerradas (GET /api/auth/me -> 401, pantalla de login). Captura 01.
+Nota: B-1 ya estaba "No Operativo" por reportes anteriores (N° 1, 3 y 5 pendientes).
+
+1) bombero.c1 inicia sesión, reporta la falla de B-1 (N° 7, 11:31:04) y cierra sesión.  Capturas 02-03
+2) teniente.c1 inicia sesión; contador "Fallas" = 5; el N° 7 aparece en "Pendientes de derivar";
+   lo deriva (11:31:58) y pasa a "Derivados al Inspector"; cierra sesión.          Capturas 04-06
+3) inspector.c1 inicia sesión; contador "Fallas" = 3; ve el N° 7 en "Derivados al Inspector"
+   con el botón "Registrar mantención".                                            Captura 07
+4) Ficha de B-1 -> Historial de Fallas: el N° 7 aparece como "Derivado" con
+   "Reportado por Bombero Primera · Derivado por Teniente Primera".                Captura 08
+
+Verificación en la base de datos:
+ n | nomenclatura | estado_vehiculo | urgencia | estado_reporte |     reportado_por     |    fecha_reporte    |      derivado_por      |  fecha_derivacion   
+---+--------------+-----------------+----------+----------------+-----------------------+---------------------+------------------------+---------------------
+ 7 | B-1          | no_operativo    | alta     | derivado       | bombero.c1@sigmave.cl | 08-10-2026 11:31:04 | teniente.c1@sigmave.cl | 08-10-2026 11:31:58
+(1 row)
