@@ -5,6 +5,7 @@ import { useVehicles } from "../store.jsx";
 import PageHeader from "../components/PageHeader.jsx";
 import EmptyState from "../components/EmptyState.jsx";
 import { IcPlus, IcUsers } from "../components/Icons.jsx";
+import { normalizarRut } from "../utils.js";
 
 // Nombres de rol en BD -> etiquetas mostradas en la UI.
 const ROLE_LABELS = {
@@ -95,13 +96,8 @@ export default function Users() {
     }
     if (!form.rut.trim()) {
       errors.rut = "El RUT es obligatorio";
-    } else {
-      const limpio = form.rut.trim().replace(/[^0-9kK-]/g, "").replace(/^0+/, "");
-      const sinDV = limpio.replace(/-/g, "");
-      const soloDigitos = sinDV.replace(/[kK-]/g, "");
-      if (!/^\d{7,8}$/.test(soloDigitos) && !/^\d{7,8}[kK]$/.test(sinDV)) {
-        errors.rut = "El RUT no tiene un formato válido";
-      }
+    } else if (!normalizarRut(form.rut)) {
+      errors.rut = "El RUT no es válido (revisa el dígito verificador)";
     }
     if (!form.email.trim()) {
       errors.email = "El correo es obligatorio";
@@ -137,7 +133,7 @@ export default function Users() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          rut: form.rut.trim(),
+          rut: normalizarRut(form.rut),
           nombre_completo: form.nombre_completo.trim(),
           email: form.email.trim(),
           password: form.password,
