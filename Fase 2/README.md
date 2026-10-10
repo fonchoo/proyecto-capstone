@@ -1,10 +1,10 @@
-# SIGMAVE — Sistema de Gestión de Mantenimiento de Vehículos
+# SIGMAVE — Sistema de Gestión de Mantenimiento de Vehículos de Emergencia
 
-Proyecto Capstone del ramo **APT122** que consiste en una plataforma web para la gestión y seguimiento del mantenimiento de flotas de vehículos.
+Proyecto Capstone del ramo **APT122** que consiste en una plataforma web para la gestión y seguimiento del mantenimiento de vehículos de emergencia (material mayor) de compañías de bomberos.
 
 ## 📋 Descripción
 
-SIGMAVE permite registrar vehículos, reportar fallas, programar mantenciones y visualizar métricas del estado de la flota, con distintos niveles de acceso según el rol del usuario.
+SIGMAVE permite registrar vehículos, reportar fallas, derivar los reportes, registrar mantenciones y generar alertas automáticas de mantención preventiva, además de un dashboard y reportería de costos, con distintos niveles de acceso según el rol del usuario.
 
 
 ## 📁 Estructura del repositorio
@@ -15,11 +15,13 @@ proyecto-capstone/
 └── Fase 2/
     ├── Evidencias/               # Evidencias académicas (grupales, individuales) y docs (ERS)
     ├── Front/                    # Aplicación cliente (React + Vite + Tailwind CSS)
+    │   ├── src/                        # Componentes, páginas, layouts y estado
     │   ├── docker-compose.yml          # Producción: nginx (perfil "prod", puerto 8080)
     │   ├── docker-compose.override.yml # Desarrollo: Vite con HMR (puerto 5173)
     │   ├── Dockerfile / Dockerfile.dev
     │   └── nginx.conf
-    └── Backend/                  # API servidor (Node.js + Express + PostgreSQL/Supabase)
+    └── backend/                  # API servidor (Node.js + Express + PostgreSQL/Supabase)
+        ├── src/                        # Rutas de la API, autenticación y reglas de negocio
         ├── supabase/
         │   ├── config.toml             # Supabase local (project_id "sigmave", puertos 553xx)
         │   ├── migrations/             # Esquema de la base (una migración por cambio)
@@ -35,15 +37,18 @@ proyecto-capstone/
 
 ### Frontend
 - **React 18** — Librería de UI
-- **Vite** — Bundler y dev server
+- **Vite 7** — Bundler y dev server
 - **Tailwind CSS** — Estilos
-- **React Router** — Navegación
+- **React Router 7** — Navegación
+- **jsPDF** — Exportación de reportes a PDF
 
 ### Backend
 - **Node.js** — Entorno de ejecución
-- **Express** — Framework para API REST
+- **Express 5** — Framework para API REST
 - **PostgreSQL (Supabase)** — Base de datos relacional; en local con Supabase CLI
-- **Prisma** — ORM para acceso a datos _(a definir)_
+- **pg (node-postgres)** — Acceso a datos con SQL directo
+- **bcryptjs** — Hash de contraseñas
+- **jsonwebtoken** — Sesión mediante JWT
 
 
 ## ⚙️ Instalación y ejecución
@@ -58,19 +63,23 @@ proyecto-capstone/
 ### 1. Base de datos (Supabase local)
 
 La base es **Supabase**, y en local la levanta su CLI (viene como
-dependencia de desarrollo del Backend). **Correr desde `Backend/`**: ahí vive
+dependencia de desarrollo del backend). **Correr desde `backend/`**: ahí vive
 `supabase/config.toml`.
 
 ```bash
-cd Backend
+cd backend
 npm ci
 npx supabase start     # la primera vez tarda (descarga imágenes)
 npx supabase status    # muestra URLs y credenciales
 ```
 
 `supabase start` aplica las migraciones de `supabase/migrations/` y después
-`supabase/seed.sql` (roles, compañía, tipos de mantención y dos administradores
-de prueba: `administrador@gmail.com` y `admin@admin.cl`, ambos con clave `admin1234`).
+`supabase/seed.sql` (4 roles, 2 compañías, tipos de mantención, 3 vehículos con
+mantenciones y usuarios de prueba). Hay **dos administradores**
+(`administrador@gmail.com` y `admin@admin.cl`, ambos con clave `admin1234`) y,
+en cada compañía, un usuario por rol (`bombero`, `teniente_tercero` e
+`inspector_material_mayor`, todos con clave `prueba1234`): `bombero.c1@sigmave.cl`,
+`teniente.c1@sigmave.cl`, `inspector.c1@sigmave.cl` y sus equivalentes `.c2`.
 
 > `usuario.password` **siempre es un hash bcrypt** (la base rechaza texto plano).
 > Desde Studio/SQL: `extensions.crypt('mi_clave', extensions.gen_salt('bf', 12))`.
@@ -83,7 +92,7 @@ de prueba: `administrador@gmail.com` y `admin@admin.cl`, ambos con clave `admin1
 Los puertos están en el rango **553xx** (no el 543xx por defecto) para no
 chocar con otros proyectos Supabase levantados en la misma máquina.
 
-Comandos útiles (siempre desde `Backend/`):
+Comandos útiles (siempre desde `backend/`):
 
 ```bash
 npx supabase stop                      # apaga (los datos se conservan)
@@ -97,7 +106,7 @@ npx supabase migration new <nombre>    # crea una migración nueva para cambiar 
 ### 2. Backend
 
 ```bash
-cd Backend
+cd backend
 cp .env.example .env    # ya trae los valores de Supabase local
 # Generar JWT_SECRET (obligatorio, la API no arranca sin él) y pegarlo en .env:
 node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
@@ -126,10 +135,10 @@ host (`host.docker.internal`), así que el orden es **Supabase → Backend → F
 
 ```bash
 # 1) Base
-cd Backend
+cd backend
 npx supabase start
 
-# 2) API con nodemon (el .env de Backend/ sigue siendo necesario)
+# 2) API con nodemon (el .env de backend/ sigue siendo necesario)
 docker compose up -d --build
 
 # 3) Front: Vite con HMR -> http://localhost:5173
@@ -140,7 +149,7 @@ docker compose up -d --build
 Producción (sin override):
 
 ```bash
-cd Backend
+cd backend
 docker compose -f docker-compose.yml up -d --build
 cd ../Front
 docker compose -f docker-compose.yml --profile prod up -d --build   # -> http://localhost:8080
@@ -149,13 +158,21 @@ docker compose -f docker-compose.yml --profile prod up -d --build   # -> http://
 ## 🔐 Sesión, roles y compañías
 
 - **Sesión:** el login entrega un JWT en una cookie `httpOnly` (8 h). Toda la API
-  bajo `/api` exige sesión, salvo `POST /api/auth/login`. Ver `Backend/src/auth.js`.
-- **Roles:** la API valida los permisos de cada rol (no solo el front):
-  gestión de usuarios y compañías solo `administrador`; registrar mantenciones
-  `teniente_tercero`, `inspector_material_mayor` y `administrador`.
+  bajo `/api` exige sesión, salvo `POST /api/auth/login`. Ver `backend/src/auth.js`.
+- **Roles:** la API valida los permisos de cada rol (no solo el front). La
+  matriz completa vive en `Front/src/permissions.js` y `backend/src/auth.js`:
+
+  | Acción | Roles |
+  |---|---|
+  | Reportar falla | todos |
+  | Derivar falla (HU06) | `teniente_tercero`, `inspector_material_mayor`, `administrador` |
+  | Registrar mantención | `teniente_tercero`, `inspector_material_mayor`, `administrador` |
+  | Reportería y costos | `inspector_material_mayor`, `administrador` |
+  | Gestión de usuarios | `administrador` |
+
 - **Compañías:** cada usuario ve solo los datos de su compañía. El
   `administrador` ve todas y elige cuál revisar con el selector del menú
-  superior. La regla vive en una sola función (`Backend/src/alcance.js`),
+  superior. La regla vive en una sola función (`backend/src/alcance.js`),
   pensada para sumar más adelante administradores de Cuerpo o región.
 
 > Al cambiar dependencias del Backend con Docker, recrear el contenedor con
@@ -170,9 +187,10 @@ docker compose -f docker-compose.yml --profile prod up -d --build   # -> http://
 | Patricio Finschi | Frontend Developer |
 | Ramón Ortiz | SCRUM Master y Documentacion |
 
-📚 Documentación
-Las evidencias y entregables académicos se encuentran en la carpeta Evidencias/.
+## 📚 Documentación
 
+Las evidencias y entregables académicos se encuentran en la carpeta `Evidencias/`.
 
-📄 Licencia
+## 📄 Licencia
+
 Proyecto académico — uso educativo.
