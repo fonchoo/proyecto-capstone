@@ -29,7 +29,7 @@ ON CONFLICT (id_rol) DO NOTHING;
 
 -- Compañías
 INSERT INTO compania (id_compania, numero_compania, nombre, direccion, comuna) VALUES
-  (1, 1, 'Primera compañia', 'Direccion #123', 'Maipu'),
+  (1, 1, 'Primera Compañía', 'Direccion #123', 'Maipu'),
   (2, 2, 'Segunda Compañía', 'Direccion #456', 'Maipu')
 ON CONFLICT (id_compania) DO NOTHING;
 
