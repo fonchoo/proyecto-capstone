@@ -13,14 +13,16 @@ SIGMAVE permite registrar vehículos, reportar fallas, derivar los reportes, reg
 proyecto-capstone/
 ├── Fase 1/                       # Entregables de la primera fase del proyecto
 └── Fase 2/
-    ├── Evidencias/               # Evidencias académicas (grupales, individuales) y docs (ERS)
+    ├── Evidencias/               # Evidencias académicas (grupales, individuales), pruebas y docs
+    │   ├── docs/                       # ERS, plan de pruebas y diagramas del modelo de datos
+    │   └── Pruebas/                    # Evidencia de cada caso de prueba (MTC_xxxx), por sprint
     ├── Front/                    # Aplicación cliente (React + Vite + Tailwind CSS)
     │   ├── src/                        # Componentes, páginas, layouts y estado
     │   ├── docker-compose.yml          # Producción: nginx (perfil "prod", puerto 8080)
     │   ├── docker-compose.override.yml # Desarrollo: Vite con HMR (puerto 5173)
     │   ├── Dockerfile / Dockerfile.dev
     │   └── nginx.conf
-    └── backend/                  # API servidor (Node.js + Express + PostgreSQL/Supabase)
+    └── Backend/                  # API servidor (Node.js + Express + PostgreSQL/Supabase)
         ├── src/                        # Rutas de la API, autenticación y reglas de negocio
         ├── supabase/
         │   ├── config.toml             # Supabase local (project_id "sigmave", puertos 553xx)
@@ -63,11 +65,11 @@ proyecto-capstone/
 ### 1. Base de datos (Supabase local)
 
 La base es **Supabase**, y en local la levanta su CLI (viene como
-dependencia de desarrollo del backend). **Correr desde `backend/`**: ahí vive
+dependencia de desarrollo del backend). **Correr desde `Backend/`**: ahí vive
 `supabase/config.toml`.
 
 ```bash
-cd backend
+cd Backend
 npm ci
 npx supabase start     # la primera vez tarda (descarga imágenes)
 npx supabase status    # muestra URLs y credenciales
@@ -75,11 +77,23 @@ npx supabase status    # muestra URLs y credenciales
 
 `supabase start` aplica las migraciones de `supabase/migrations/` y después
 `supabase/seed.sql` (4 roles, 2 compañías, tipos de mantención, 3 vehículos con
-mantenciones y usuarios de prueba). Hay **dos administradores**
-(`administrador@gmail.com` y `admin@admin.cl`, ambos con clave `admin1234`) y,
-en cada compañía, un usuario por rol (`bombero`, `teniente_tercero` e
-`inspector_material_mayor`, todos con clave `prueba1234`): `bombero.c1@sigmave.cl`,
-`teniente.c1@sigmave.cl`, `inspector.c1@sigmave.cl` y sus equivalentes `.c2`.
+mantenciones y usuarios de prueba).
+
+**Usuarios de prueba** (creados por `seed.sql`):
+
+| Correo | Rol | Compañía | Clave |
+|---|---|---|---|
+| `administrador@gmail.com` | `administrador` | Primera Compañía | `admin1234` |
+| `admin@admin.cl` | `administrador` | Primera Compañía | `admin1234` |
+| `bombero.c1@sigmave.cl` | `bombero` | Primera Compañía | `prueba1234` |
+| `teniente.c1@sigmave.cl` | `teniente_tercero` | Primera Compañía | `prueba1234` |
+| `inspector.c1@sigmave.cl` | `inspector_material_mayor` | Primera Compañía | `prueba1234` |
+| `bombero.c2@sigmave.cl` | `bombero` | Segunda Compañía | `prueba1234` |
+| `teniente.c2@sigmave.cl` | `teniente_tercero` | Segunda Compañía | `prueba1234` |
+| `inspector.c2@sigmave.cl` | `inspector_material_mayor` | Segunda Compañía | `prueba1234` |
+
+Los administradores quedan asignados a la Primera Compañía, pero por su rol
+ven **todas** las compañías (ver [Sesión, roles y compañías](#-sesión-roles-y-compañías)).
 
 > `usuario.password` **siempre es un hash bcrypt** (la base rechaza texto plano).
 > Desde Studio/SQL: `extensions.crypt('mi_clave', extensions.gen_salt('bf', 12))`.
@@ -92,7 +106,7 @@ en cada compañía, un usuario por rol (`bombero`, `teniente_tercero` e
 Los puertos están en el rango **553xx** (no el 543xx por defecto) para no
 chocar con otros proyectos Supabase levantados en la misma máquina.
 
-Comandos útiles (siempre desde `backend/`):
+Comandos útiles (siempre desde `Backend/`):
 
 ```bash
 npx supabase stop                      # apaga (los datos se conservan)
@@ -106,7 +120,7 @@ npx supabase migration new <nombre>    # crea una migración nueva para cambiar 
 ### 2. Backend
 
 ```bash
-cd backend
+cd Backend
 cp .env.example .env    # ya trae los valores de Supabase local
 # Generar JWT_SECRET (obligatorio, la API no arranca sin él) y pegarlo en .env:
 node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
@@ -135,10 +149,10 @@ host (`host.docker.internal`), así que el orden es **Supabase → Backend → F
 
 ```bash
 # 1) Base
-cd backend
+cd Backend
 npx supabase start
 
-# 2) API con nodemon (el .env de backend/ sigue siendo necesario)
+# 2) API con nodemon (el .env de Backend/ sigue siendo necesario)
 docker compose up -d --build
 
 # 3) Front: Vite con HMR -> http://localhost:5173
@@ -149,7 +163,7 @@ docker compose up -d --build
 Producción (sin override):
 
 ```bash
-cd backend
+cd Backend
 docker compose -f docker-compose.yml up -d --build
 cd ../Front
 docker compose -f docker-compose.yml --profile prod up -d --build   # -> http://localhost:8080
@@ -158,9 +172,9 @@ docker compose -f docker-compose.yml --profile prod up -d --build   # -> http://
 ## 🔐 Sesión, roles y compañías
 
 - **Sesión:** el login entrega un JWT en una cookie `httpOnly` (8 h). Toda la API
-  bajo `/api` exige sesión, salvo `POST /api/auth/login`. Ver `backend/src/auth.js`.
+  bajo `/api` exige sesión, salvo `POST /api/auth/login`. Ver `Backend/src/auth.js`.
 - **Roles:** la API valida los permisos de cada rol (no solo el front). La
-  matriz completa vive en `Front/src/permissions.js` y `backend/src/auth.js`:
+  matriz completa vive en `Front/src/permissions.js` y `Backend/src/auth.js`:
 
   | Acción | Roles |
   |---|---|
@@ -172,7 +186,7 @@ docker compose -f docker-compose.yml --profile prod up -d --build   # -> http://
 
 - **Compañías:** cada usuario ve solo los datos de su compañía. El
   `administrador` ve todas y elige cuál revisar con el selector del menú
-  superior. La regla vive en una sola función (`backend/src/alcance.js`),
+  superior. La regla vive en una sola función (`Backend/src/alcance.js`),
   pensada para sumar más adelante administradores de Cuerpo o región.
 
 > Al cambiar dependencias del Backend con Docker, recrear el contenedor con
@@ -189,7 +203,19 @@ docker compose -f docker-compose.yml --profile prod up -d --build   # -> http://
 
 ## 📚 Documentación
 
-Las evidencias y entregables académicos se encuentran en la carpeta `Evidencias/`.
+Las evidencias y entregables académicos se encuentran en la carpeta `Evidencias/`:
+
+| Documento | Ubicación |
+|---|---|
+| Especificación de requisitos (ERS) | [`Evidencias/docs/ERS_SIGMAVE.docx`](Evidencias/docs/ERS_SIGMAVE.docx) |
+| Plan de pruebas | [`Evidencias/docs/Plan_de_Pruebas_Bomberos_completado.xlsx`](Evidencias/docs/Plan_de_Pruebas_Bomberos_completado.xlsx) |
+| Evidencia de pruebas | `Evidencias/Pruebas/Sprint N/MTC_xxxx - HUxx-<tipo>/` (una carpeta por caso del plan) |
+| Modelo de datos | [`modelo-datos-drawsql.png`](Evidencias/docs/modelo-datos-drawsql.png) y [`modelo-datos-erd.png`](Evidencias/docs/modelo-datos-erd.png) |
+
+> Los diagramas del modelo de datos corresponden al esquema inicial y **no
+> incluyen la tabla `reporte_falla`** (ni los cambios de las migraciones
+> posteriores). La fuente de verdad del esquema son las migraciones en
+> `Backend/supabase/migrations/`.
 
 ## 📄 Licencia
 
