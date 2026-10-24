@@ -164,10 +164,20 @@ export default function Users() {
     <div>
       <PageHeader title="Gestión de Usuarios" subtitle={`${users.length} usuarios registrados`} />
       <div className="px-4 pb-6 space-y-4 lg:px-8">
-        <button onClick={() => setShowForm(!showForm)} className={t.smallBtn}>
+        <button
+          onClick={() => {
+            setFormOk("");
+            setShowForm(!showForm);
+          }}
+          className={t.smallBtn}
+        >
           <IcPlus cls="w-4 h-4" />
           {showForm ? "Ocultar formulario" : "Agregar Usuario"}
         </button>
+
+        {/* Fuera del formulario: al guardar, el formulario se cierra y el
+            mensaje tiene que seguir visible. */}
+        {formOk && <p role="status" className={okCls}>{formOk}</p>}
 
         {showForm && (
           <div className={t.addForm}>
@@ -251,7 +261,6 @@ export default function Users() {
             </div>
 
             {formError && <p className={errorCls}>{formError}</p>}
-            {formOk && <p className={okCls}>{formOk}</p>}
 
             <div className="flex gap-2 pt-1">
               <button onClick={handleSubmit} disabled={loading} className={t.saveUserBtn}>

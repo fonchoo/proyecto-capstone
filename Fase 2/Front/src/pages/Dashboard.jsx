@@ -153,12 +153,19 @@ export default function Dashboard() {
       </div>
 
       <button
-        onClick={() => setShowForm((s) => !s)}
+        onClick={() => {
+          setFormOk("");
+          setShowForm((s) => !s);
+        }}
         className={t.smallBtn}
       >
         <IcPlus cls="w-4 h-4" />
         {showForm ? "Ocultar formulario" : "Registrar vehículo"}
       </button>
+
+      {/* Fuera del formulario: al guardar, el formulario se cierra y el
+          mensaje tiene que seguir visible (MTC_0070). */}
+      {formOk && <p role="status" className={`${okCls} mt-3`}>{formOk}</p>}
 
       {showForm && (
         <div className={`${t.card} p-5 mt-4`}>
@@ -256,7 +263,6 @@ export default function Dashboard() {
             </div>
 
             {formError && <p className={errorCls}>{formError}</p>}
-            {formOk && <p className={okCls}>{formOk}</p>}
 
             <div className="flex gap-3">
               <button type="submit" disabled={saving} className={t.saveUserBtn}>
