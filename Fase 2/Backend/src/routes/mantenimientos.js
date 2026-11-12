@@ -16,6 +16,13 @@
 // lo calcula SIEMPRE la API (repuestos + mano de obra). Un
 // "costo_total" enviado en el body se ignora.
 //
+// Obligatorios (HU07 CA4/CA8), según el momento:
+//   - Siempre: tipo, fecha de ingreso, taller y detalle/motivo (dónde
+//     está el carro y por qué).
+//   - Al finalizar (con fecha de salida): repuestos y mano de obra
+//     ($0 vale). La reportería de costos (HU13) depende de ellos; al
+//     ingresar todavía no se conocen, por eso ahí son opcionales.
+//
 // Ciclo de la mantención (HU07):
 //   - Sin fecha de salida -> "en_proceso"; con fecha de salida ->
 //     "finalizada". El estado NO se recibe del body: se deriva.
@@ -76,7 +83,7 @@ function calcularCostos(body) {
     }
     const n = Number(valor);
     if (!Number.isFinite(n) || n < 0) {
-      return { error: `"${campo}" debe ser un monto mayor o igual a 0` };
+      return { campo, error: "Debe ser un monto mayor o igual a 0" };
     }
     montos[campo] = n;
   }
@@ -110,6 +117,82 @@ function validarFechas(fechaIngreso, fechaSalida) {
     return "La fecha de salida no puede ser futura";
   }
   return null;
+}
+
+// Mensaje de cada monto cuando falta al finalizar.
+const COSTO_OBLIGATORIO = {
+  costo_repuestos: "Los repuestos son obligatorios al finalizar (puede ser $0)",
+  mano_obra: "La mano de obra es obligatoria al finalizar (puede ser $0)",
+};
+
+const texto = (valor) => (typeof valor === "string" ? valor.trim() : "");
+const vacio = (valor) => valor === undefined || valor === null || valor === "";
+
+// Valida el cuerpo de POST y PUT. Devuelve { datos } normalizados o
+// { errores } por campo (el front los muestra bajo cada input).
+async function validarMantencion(body) {
+  const errores = {};
+  const datos = {
+    fecha_ingreso: body.fecha_ingreso,
+    fecha_salida: vacio(body.fecha_salida) ? null : body.fecha_salida,
+    detalle_trabajo: texto(body.detalle_trabajo),
+    proveedor: texto(body.proveedor),
+    id_vehiculo: Number(body.id_vehiculo),
+    id_tipo_mantencion: Number(body.id_tipo_mantencion),
+    kilometraje_ingreso: null,
+  };
+
+  if (!Number.isInteger(datos.id_vehiculo)) errores.id_vehiculo = "Falta el vehículo";
+  if (!Number.isInteger(datos.id_tipo_mantencion)) {
+    errores.id_tipo_mantencion = "Selecciona el tipo de mantención";
+  } else {
+    const { rowCount } = await pool.query(
+      "SELECT 1 FROM tipo_mantencion WHERE id_tipo_mantencion = $1",
+      [datos.id_tipo_mantencion]
+    );
+    if (rowCount === 0) errores.id_tipo_mantencion = "Tipo de mantención inválido";
+  }
+
+  if (vacio(datos.fecha_ingreso)) {
+    errores.fecha_ingreso = "La fecha de ingreso es obligatoria";
+  } else {
+    const errorFechas = validarFechas(datos.fecha_ingreso, datos.fecha_salida);
+    if (errorFechas) {
+      errores[errorFechas.includes("salida") ? "fecha_salida" : "fecha_ingreso"] = errorFechas;
+    }
+  }
+
+  if (!datos.proveedor) errores.proveedor = "El taller es obligatorio";
+  if (!datos.detalle_trabajo) errores.detalle_trabajo = "El detalle del trabajo es obligatorio";
+
+  if (!vacio(body.kilometraje_ingreso)) {
+    const km = Number(body.kilometraje_ingreso);
+    if (!Number.isInteger(km) || km < 0) {
+      errores.kilometraje_ingreso = "El kilometraje debe ser un número entero mayor o igual a 0";
+    } else {
+      datos.kilometraje_ingreso = km;
+    }
+  }
+
+  const costos = calcularCostos(body);
+  if (costos.error) {
+    errores[costos.campo] = costos.error;
+  } else if (datos.fecha_salida) {
+    for (const campo of ["costo_repuestos", "mano_obra"]) {
+      if (vacio(body[campo])) {
+        errores[campo] = COSTO_OBLIGATORIO[campo];
+      }
+    }
+  }
+  datos.costo_total = costos.costo_total ?? null;
+  datos.mano_obra = costos.mano_obra ?? null;
+
+  return Object.keys(errores).length ? { errores } : { datos };
+}
+
+// 400 con un mensaje legible y el detalle por campo.
+function responderErrores(res, errores) {
+  return res.status(400).json({ error: Object.values(errores).join(". "), campos: errores });
 }
 
 // Busca una mantención SOLO si su vehículo está en el alcance.
@@ -190,35 +273,16 @@ router.get("/:id", async (req, res, next) => {
 // Body opcional: "id_reporte_falla" -> reporte derivado que resuelve.
 router.post("/", requireRol(...ROLES_MANTENCION), async (req, res, next) => {
   try {
-    const {
-      fecha_ingreso,
-      fecha_salida,
-      kilometraje_ingreso,
-      detalle_trabajo,
-      proveedor,
-      id_vehiculo,
-      id_tipo_mantencion,
-      id_reporte_falla,
-    } = req.body;
+    const { datos, errores } = await validarMantencion(req.body);
+    if (errores) return responderErrores(res, errores);
+    const { id_vehiculo } = datos;
+    const { id_reporte_falla } = req.body;
 
-    if (!fecha_ingreso || !id_vehiculo || !id_tipo_mantencion) {
-      return res.status(400).json({
-        error: 'Se requieren "fecha_ingreso", "id_vehiculo" e "id_tipo_mantencion"',
-      });
-    }
-    const errorFechas = validarFechas(fecha_ingreso, fecha_salida);
-    if (errorFechas) {
-      return res.status(400).json({ error: errorFechas });
-    }
-    const costos = calcularCostos(req.body);
-    if (costos.error) {
-      return res.status(400).json({ error: costos.error });
-    }
     if (!(await puedeUsarVehiculo(req.usuario, id_vehiculo))) {
       return res.status(404).json(VEHICULO_NO_ENCONTRADO);
     }
 
-    const finalizada = Boolean(fecha_salida);
+    const finalizada = Boolean(datos.fecha_salida);
 
     const creada = await enTransaccion(pool, async (client) => {
       const { rows } = await client.query(
@@ -229,16 +293,16 @@ router.post("/", requireRol(...ROLES_MANTENCION), async (req, res, next) => {
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
          RETURNING *`,
         [
-          fecha_ingreso,
-          fecha_salida || null,
-          kilometraje_ingreso || null,
-          detalle_trabajo || null,
-          proveedor || null,
-          costos.costo_total,
-          costos.mano_obra,
+          datos.fecha_ingreso,
+          datos.fecha_salida,
+          datos.kilometraje_ingreso,
+          datos.detalle_trabajo,
+          datos.proveedor,
+          datos.costo_total,
+          datos.mano_obra,
           finalizada ? "finalizada" : "en_proceso",
           id_vehiculo,
-          id_tipo_mantencion,
+          datos.id_tipo_mantencion,
           req.usuario.id_usuario,
         ]
       );
@@ -263,6 +327,8 @@ router.post("/", requireRol(...ROLES_MANTENCION), async (req, res, next) => {
 // Registra la fecha de salida de una mantención en proceso: queda
 // "finalizada", sus reportes de falla pasan a "resuelto" y se
 // recalcula el estado del vehículo (vuelve a operativo si corresponde).
+// Al finalizar, repuestos y mano de obra son obligatorios: se pueden
+// enviar en el body; si no vienen, se usan los ya registrados.
 router.patch(
   "/:id/finalizar",
   requireRol(...ROLES_MANTENCION),
@@ -275,21 +341,41 @@ router.patch(
       if (actual.estado_mantencion !== "en_proceso") {
         return res.status(409).json({ error: "La mantención ya está finalizada" });
       }
+      const errores = {};
       const { fecha_salida } = req.body;
       if (!fecha_salida) {
-        return res.status(400).json({ error: 'Se requiere "fecha_salida"' });
+        errores.fecha_salida = "La fecha de salida es obligatoria";
+      } else {
+        const errorFechas = validarFechas(actual.fecha_ingreso, fecha_salida);
+        if (errorFechas) errores.fecha_salida = errorFechas;
       }
-      const errorFechas = validarFechas(actual.fecha_ingreso, fecha_salida);
-      if (errorFechas) {
-        return res.status(400).json({ error: errorFechas });
+
+      // Montos finales: los del body o, si no vienen, los registrados.
+      const montos = {
+        costo_repuestos: vacio(req.body.costo_repuestos)
+          ? actual.costo_total === null ? "" : actual.costo_repuestos
+          : req.body.costo_repuestos,
+        mano_obra: vacio(req.body.mano_obra) ? actual.mano_obra ?? "" : req.body.mano_obra,
+      };
+      const costos = calcularCostos(montos);
+      if (costos.error) {
+        errores[costos.campo] = costos.error;
+      } else {
+        for (const campo of ["costo_repuestos", "mano_obra"]) {
+          if (vacio(montos[campo])) {
+            errores[campo] = COSTO_OBLIGATORIO[campo];
+          }
+        }
       }
+      if (Object.keys(errores).length) return responderErrores(res, errores);
 
       const estadoVehiculo = await enTransaccion(pool, async (client) => {
         await client.query(
           `UPDATE mantencion
-           SET fecha_salida = $1, estado_mantencion = 'finalizada'
-           WHERE id_mantencion = $2`,
-          [fecha_salida, actual.id_mantencion]
+           SET fecha_salida = $1, estado_mantencion = 'finalizada',
+               costo_total = $2, mano_obra = $3
+           WHERE id_mantencion = $4`,
+          [fecha_salida, costos.costo_total, costos.mano_obra, actual.id_mantencion]
         );
         await sincronizarReportes(client, actual.id_mantencion, true);
         return recalcularEstadoVehiculo(client, actual.id_vehiculo);
@@ -308,29 +394,10 @@ router.patch(
 // deriva de la fecha de salida, igual que al crear.
 router.put("/:id", requireRol(...ROLES_MANTENCION), async (req, res, next) => {
   try {
-    const {
-      fecha_ingreso,
-      fecha_salida,
-      kilometraje_ingreso,
-      detalle_trabajo,
-      proveedor,
-      id_vehiculo,
-      id_tipo_mantencion,
-    } = req.body;
+    const { datos, errores } = await validarMantencion(req.body);
+    if (errores) return responderErrores(res, errores);
+    const { id_vehiculo } = datos;
 
-    if (!fecha_ingreso || !id_vehiculo || !id_tipo_mantencion) {
-      return res.status(400).json({
-        error: 'Se requieren "fecha_ingreso", "id_vehiculo" e "id_tipo_mantencion"',
-      });
-    }
-    const errorFechas = validarFechas(fecha_ingreso, fecha_salida);
-    if (errorFechas) {
-      return res.status(400).json({ error: errorFechas });
-    }
-    const costos = calcularCostos(req.body);
-    if (costos.error) {
-      return res.status(400).json({ error: costos.error });
-    }
     const actual = await buscarEnAlcance(req, req.params.id);
     if (!actual) {
       return res.status(404).json(NO_ENCONTRADA);
@@ -345,7 +412,7 @@ router.put("/:id", requireRol(...ROLES_MANTENCION), async (req, res, next) => {
       });
     }
 
-    const finalizada = Boolean(fecha_salida);
+    const finalizada = Boolean(datos.fecha_salida);
 
     const actualizada = await enTransaccion(pool, async (client) => {
       const { rows } = await client.query(
@@ -356,16 +423,16 @@ router.put("/:id", requireRol(...ROLES_MANTENCION), async (req, res, next) => {
              id_tipo_mantencion = $10
          WHERE id_mantencion = $11 RETURNING *`,
         [
-          fecha_ingreso,
-          fecha_salida || null,
-          kilometraje_ingreso || null,
-          detalle_trabajo || null,
-          proveedor || null,
-          costos.costo_total,
-          costos.mano_obra,
+          datos.fecha_ingreso,
+          datos.fecha_salida,
+          datos.kilometraje_ingreso,
+          datos.detalle_trabajo,
+          datos.proveedor,
+          datos.costo_total,
+          datos.mano_obra,
           finalizada ? "finalizada" : "en_proceso",
           id_vehiculo,
-          id_tipo_mantencion,
+          datos.id_tipo_mantencion,
           req.params.id,
         ]
       );

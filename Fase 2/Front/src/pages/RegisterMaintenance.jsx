@@ -128,6 +128,21 @@ export default function RegisterMaintenance() {
     if (form.mano_obra && Number(form.mano_obra) < 0) {
       errors.mano_obra = "El costo no puede ser negativo";
     }
+    // Obligatorios (mismas reglas que la API, ver mantenimientos.js):
+    // taller y detalle siempre; los costos solo si ya tiene salida.
+    if (!form.proveedor.trim()) errors.proveedor = "El taller es obligatorio";
+    if (!form.detalle_trabajo.trim()) {
+      errors.detalle_trabajo = "El detalle del trabajo es obligatorio";
+    }
+    if (form.fecha_salida) {
+      for (const campo of ["costo_repuestos", "mano_obra"]) {
+        if (form[campo] === "" && !errors[campo]) {
+          errors[campo] = campo === "mano_obra"
+            ? "La mano de obra es obligatoria al finalizar (puede ser $0)"
+            : "Los repuestos son obligatorios al finalizar (puede ser $0)";
+        }
+      }
+    }
     return errors;
   };
 
@@ -153,16 +168,21 @@ export default function RegisterMaintenance() {
         detalle_trabajo: form.detalle_trabajo.trim() || null,
         proveedor: form.proveedor.trim() || null,
         // El costo total lo calcula la API (repuestos + mano de obra).
-        costo_repuestos: form.costo_repuestos ? Number(form.costo_repuestos) : null,
-        mano_obra: form.mano_obra ? Number(form.mano_obra) : null,
+        costo_repuestos: form.costo_repuestos !== "" ? Number(form.costo_repuestos) : null,
+        mano_obra: form.mano_obra !== "" ? Number(form.mano_obra) : null,
         id_vehiculo: Number(vehicle.id),
         id_tipo_mantencion: Number(idTipo),
         id_reporte_falla: reporteElegido ? Number(reporteElegido) : null,
         // El responsable lo pone la API con el usuario de la sesión.
       });
-      navigate(`/vehiculos/${vehicle.id}`);
+      // Al historial, donde ya aparece el registro nuevo (HU07 CA5). El
+      // mensaje viaja en el state: este formulario deja de existir.
+      navigate(`/vehiculos/${vehicle.id}?tab=historial`, {
+        state: { ok: "Mantención registrada correctamente" },
+      });
     } catch (err) {
       setFormError(err.message);
+      if (err.campos) setFieldErrors(err.campos);
     } finally {
       setSaving(false);
     }
@@ -276,19 +296,22 @@ export default function RegisterMaintenance() {
           </div>
 
           <div>
-            <label className={t.label}>Detalle del trabajo / Insumos utilizados</label>
+            <label className={t.label}>Detalle del trabajo / Insumos utilizados *</label>
             <textarea
               rows={2}
               value={form.detalle_trabajo}
               onChange={set("detalle_trabajo")}
               placeholder="Ej: Cambio de aceite 15W-40, filtro de aceite, revisión de frenos"
-              className={t.textarea}
+              className={`${t.textarea} ${fieldErrors.detalle_trabajo ? t.inputError : ""}`}
             />
+            {fieldErrors.detalle_trabajo && (
+              <p className={`${errorCls} mt-1`}>{fieldErrors.detalle_trabajo}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={t.label}>Repuestos / insumos ($)</label>
+              <label className={t.label}>Repuestos / insumos ($){form.fecha_salida ? " *" : ""}</label>
               <input
                 type="number"
                 min="0"
@@ -303,7 +326,7 @@ export default function RegisterMaintenance() {
               )}
             </div>
             <div>
-              <label className={t.label}>Mano de obra ($)</label>
+              <label className={t.label}>Mano de obra ($){form.fecha_salida ? " *" : ""}</label>
               <input
                 type="number"
                 min="0"
@@ -326,14 +349,15 @@ export default function RegisterMaintenance() {
           </div>
 
           <div>
-            <label className={t.label}>Taller / Mecánico</label>
+            <label className={t.label}>Taller / Mecánico *</label>
             <input
               type="text"
               value={form.proveedor}
               onChange={set("proveedor")}
               placeholder="Ej: Taller Central Bomberos"
-              className={t.input}
+              className={`${t.input} ${fieldErrors.proveedor ? t.inputError : ""}`}
             />
+            {fieldErrors.proveedor && <p className={`${errorCls} mt-1`}>{fieldErrors.proveedor}</p>}
           </div>
 
           {formError && <p className={errorCls}>{formError}</p>}

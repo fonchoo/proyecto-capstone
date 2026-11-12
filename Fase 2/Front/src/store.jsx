@@ -55,6 +55,10 @@ const mapMaintenance = (m) => ({
   cost: Number(m.costo_total) || 0,
   parts: Number(m.costo_repuestos) || 0,
   labor: Number(m.mano_obra) || 0,
+  // Montos tal como están registrados (null = todavía no se ingresan;
+  // distinto de $0). Al finalizar son obligatorios.
+  partsRegistered: m.costo_total === null ? null : Number(m.costo_repuestos),
+  laborRegistered: m.mano_obra === null ? null : Number(m.mano_obra),
   description: m.detalle_trabajo || "",
   workshop: m.proveedor || "—",
   // Ciclo (HU07): "en_proceso" sin fecha de salida, "finalizada" con ella.
@@ -220,16 +224,10 @@ export function VehicleProvider({ children }) {
     return body;
   };
 
+  // HU07: registrar mantención. Los errores por campo de la API llegan
+  // en error.campos (ver enviar).
   const addMaintenance = async (data) => {
-    const res = await fetch("/api/mantenimientos", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    const body = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      throw new Error(body.error || "No se pudo registrar la mantención");
-    }
+    const body = await enviar("/api/mantenimientos", "POST", data, "No se pudo registrar la mantención");
     await refreshAll();
     return body;
   };
@@ -254,13 +252,14 @@ export function VehicleProvider({ children }) {
     return body;
   };
 
-  // HU07: registra la salida de una mantención en proceso. La API
-  // resuelve sus reportes y vuelve el vehículo a operativo si corresponde.
-  const finishMaintenance = async (idMantencion, fechaSalida) => {
+  // HU07: registra la salida de una mantención en proceso, con sus
+  // costos finales (obligatorios al finalizar). La API resuelve sus
+  // reportes y vuelve el vehículo a operativo si corresponde.
+  const finishMaintenance = async (idMantencion, datos) => {
     const body = await enviar(
       `/api/mantenimientos/${idMantencion}/finalizar`,
       "PATCH",
-      { fecha_salida: fechaSalida },
+      datos,
       "No se pudo finalizar la mantención"
     );
     await refreshAll();

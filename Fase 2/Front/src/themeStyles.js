@@ -10,6 +10,10 @@ export const themes = {
     brand: "text-xs font-bold text-gray-600 tracking-wide uppercase hidden xl:block",
     navBtn: (active) =>
       `px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${active ? "bg-blue-600/15 text-blue-400" : "text-gray-500 hover:text-gray-200 hover:bg-gray-800/60"}`,
+    // Pestañas dentro de una página (ficha del vehículo).
+    tabBar: "flex gap-1 border-b border-gray-800",
+    tabBtn: (active) =>
+      `px-4 py-2.5 -mb-px border-b-2 text-sm font-medium transition-colors ${active ? "border-blue-500 text-blue-400" : "border-transparent text-gray-500 hover:text-gray-200"}`,
     toggleBtn: "flex items-center justify-center w-8 h-8 rounded-lg text-amber-400 hover:text-amber-300 hover:bg-gray-800/60 transition-colors",
     companySelect: "h-8 max-w-[11rem] sm:max-w-[14rem] px-2.5 bg-gray-900 border border-gray-800 rounded-lg text-gray-200 text-sm truncate focus:outline-none focus:border-blue-500 transition-colors",
     avatarBox: "w-7 h-7 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center",
@@ -165,6 +169,10 @@ export const themes = {
     brand: "text-xs font-medium text-gray-400 hidden xl:block",
     navBtn: (active) =>
       `px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${active ? "bg-gray-100 text-gray-900" : "text-gray-500 hover:text-gray-800 hover:bg-gray-50"}`,
+    // Pestañas dentro de una página (ficha del vehículo).
+    tabBar: "flex gap-1 border-b border-gray-200",
+    tabBtn: (active) =>
+      `px-4 py-2.5 -mb-px border-b-2 text-sm font-medium transition-colors ${active ? "border-gray-900 text-gray-900" : "border-transparent text-gray-500 hover:text-gray-800"}`,
     toggleBtn: "flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-colors",
     companySelect: "h-8 max-w-[11rem] sm:max-w-[14rem] px-2.5 bg-white border border-gray-200 rounded-lg text-gray-700 text-sm truncate focus:outline-none focus:border-gray-400 transition-colors",
     avatarBox: "w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center",

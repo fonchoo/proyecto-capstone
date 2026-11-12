@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, Navigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams, useSearchParams, Navigate } from "react-router-dom";
 import { themes } from "../themeStyles.js";
 import { useTheme } from "../theme.jsx";
 import { useVehicles } from "../store.jsx";
@@ -35,10 +35,22 @@ export default function VehicleDetail() {
 
   const vehicle = vehicles.find((v) => v.id === id);
 
+  // Pestañas de la ficha (HU08): "resumen" (datos y acciones) e
+  // "historial" (mantenciones y fallas). Va en la URL (?tab=historial)
+  // para poder enlazar directo al historial.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get("tab") === "historial" ? "historial" : "resumen";
+  // Mensaje que deja otra página al volver acá (p. ej. "Mantención
+  // registrada correctamente"); se pierde al cambiar de pestaña.
+  const { state: navState } = useLocation();
+  const setTab = (nueva) =>
+    setSearchParams(nueva === "historial" ? { tab: "historial" } : {}, { replace: true });
+
   // Historial de fallas del vehículo (tabla reporte_falla). Va ANTES
   // del return de abajo: los hooks no pueden quedar condicionados.
   const [faults, setFaults] = useState([]);
-  // Finalizar mantención (HU07): { id, date } de la que se está cerrando.
+  // Finalizar mantención (HU07): { id, date, parts, labor } de la que
+  // se está cerrando (los costos son obligatorios al finalizar).
   const [finishing, setFinishing] = useState(null);
   const [finishError, setFinishError] = useState("");
   const [savingFinish, setSavingFinish] = useState(false);
@@ -112,7 +124,11 @@ export default function VehicleDetail() {
     setFinishError("");
     setSavingFinish(true);
     try {
-      await finishMaintenance(finishing.id, finishing.date);
+      await finishMaintenance(finishing.id, {
+        fecha_salida: finishing.date,
+        costo_repuestos: Number(finishing.parts),
+        mano_obra: Number(finishing.labor),
+      });
       setFinishing(null);
     } catch (err) {
       setFinishError(err.message);
@@ -136,6 +152,25 @@ export default function VehicleDetail() {
         onBack={() => navigate("/dashboard")}
       />
       <div className="px-4 pb-6 space-y-4 lg:px-8">
+        <div className={t.tabBar} role="tablist">
+          {[
+            ["resumen", "Resumen"],
+            ["historial", "Historial"],
+          ].map(([valor, texto]) => (
+            <button
+              key={valor}
+              role="tab"
+              aria-selected={tab === valor}
+              onClick={() => setTab(valor)}
+              className={t.tabBtn(tab === valor)}
+            >
+              {texto}
+            </button>
+          ))}
+        </div>
+
+        {tab === "resumen" && (
+        <>
         <div className={`${t.card} p-5`}>
           <div className="flex items-start justify-between gap-3 mb-5">
             <div>
@@ -205,6 +240,12 @@ export default function VehicleDetail() {
             </button>
           )}
         </div>
+        </>
+        )}
+
+        {tab === "historial" && (
+        <>
+        {navState?.ok && <p role="status" className={okCls}>{navState.ok}</p>}
 
         <div className={`${t.card} overflow-hidden`}>
           <div className={`flex items-center justify-between px-4 py-3.5 ${t.cardBorder}`}>
@@ -257,9 +298,36 @@ export default function VehicleDetail() {
                           onChange={(e) => setFinishing({ ...finishing, date: e.target.value })}
                           className={`${t.input} !w-auto !py-1.5`}
                         />
+                        {/* Al finalizar, los costos son obligatorios ($0 vale). */}
+                        <label className={t.histFooter} htmlFor={`repuestos-${m.id}`}>
+                          Repuestos ($)
+                        </label>
+                        <input
+                          id={`repuestos-${m.id}`}
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={finishing.parts}
+                          onChange={(e) => setFinishing({ ...finishing, parts: e.target.value })}
+                          className={`${t.input} !w-32 !py-1.5`}
+                        />
+                        <label className={t.histFooter} htmlFor={`mano-obra-${m.id}`}>
+                          Mano de obra ($)
+                        </label>
+                        <input
+                          id={`mano-obra-${m.id}`}
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={finishing.labor}
+                          onChange={(e) => setFinishing({ ...finishing, labor: e.target.value })}
+                          className={`${t.input} !w-32 !py-1.5`}
+                        />
                         <button
                           onClick={confirmFinish}
-                          disabled={savingFinish || !finishing.date}
+                          disabled={
+                            savingFinish || !finishing.date || finishing.parts === "" || finishing.labor === ""
+                          }
                           className={t.secondaryBtn}
                         >
                           {savingFinish ? "Guardando..." : "Confirmar"}
@@ -279,7 +347,13 @@ export default function VehicleDetail() {
                       <button
                         onClick={() => {
                           setFinishError("");
-                          setFinishing({ id: m.id, date: hoyChile() });
+                          // Parte con los costos ya registrados, si los hay.
+                          setFinishing({
+                            id: m.id,
+                            date: hoyChile(),
+                            parts: m.partsRegistered === null ? "" : String(m.partsRegistered),
+                            labor: m.laborRegistered === null ? "" : String(m.laborRegistered),
+                          });
                         }}
                         className={`${t.secondaryBtn} mt-3`}
                       >
@@ -332,6 +406,8 @@ export default function VehicleDetail() {
             </div>
           )}
         </div>
+        </>
+        )}
       </div>
     </div>
   );

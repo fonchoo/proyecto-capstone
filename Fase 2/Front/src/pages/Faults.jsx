@@ -57,7 +57,7 @@ export default function Faults() {
   const encabezado = (f) => (
     <div className="flex items-center gap-2 flex-wrap">
       <span className={t.urgChip(f.urgencia)}>{f.urgencia}</span>
-      <Link to={`/vehiculos/${f.id_vehiculo}`} className={`${t.vehCode} hover:underline`}>
+      <Link to={`/vehiculos/${f.id_vehiculo}?tab=historial`} className={`${t.vehCode} hover:underline`}>
         {f.nomenclatura}
       </Link>
       <span className={t.vehType}>{[f.marca, f.modelo].filter(Boolean).join(" ")}</span>
