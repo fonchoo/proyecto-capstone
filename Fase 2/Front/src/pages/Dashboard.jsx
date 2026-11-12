@@ -9,7 +9,7 @@ import StatusBadge from "../components/StatusBadge.jsx";
 import EmptyState from "../components/EmptyState.jsx";
 import VehicleForm, { VEHICULO_VACIO } from "../components/VehicleForm.jsx";
 import { IcAlert, IcChevron, IcPlus } from "../components/Icons.jsx";
-import { estadoPreventiva } from "../utils.js";
+import { estadoPreventiva, unidades } from "../utils.js";
 
 export default function Dashboard() {
   const { theme } = useTheme();
@@ -130,7 +130,7 @@ export default function Dashboard() {
           <div className={`${t.card} overflow-hidden`}>
             <div className={`flex items-center justify-between px-4 py-3.5 ${t.cardBorder}`}>
               <h2 className={t.cardTitle}>Flota de Emergencia</h2>
-              <span className={t.cardMeta}>{vehicles.length} unidades</span>
+              <span className={t.cardMeta}>{unidades(vehicles.length)}</span>
             </div>
             <div className={t.divide}>
               {vehicles.map((v) => {

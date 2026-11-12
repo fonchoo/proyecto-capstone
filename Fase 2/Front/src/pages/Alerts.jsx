@@ -6,7 +6,7 @@ import PageHeader from "../components/PageHeader.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
 import EmptyState from "../components/EmptyState.jsx";
 import { IcAlert, IcCheck, IcChevron } from "../components/Icons.jsx";
-import { estadoPreventiva } from "../utils.js";
+import { estadoPreventiva, unidades } from "../utils.js";
 
 // ============================================================
 // Alertas de mantención PREVENTIVA (reglas en Backend/src/preventiva.js):
@@ -50,7 +50,9 @@ export default function Alerts() {
         subtitle={
           vehicles.length === 0
             ? "Sin vehículos registrados"
-            : `${alerts.length} vehículo${alerts.length !== 1 ? "s" : ""} requieren mantención preventiva`
+            : alerts.length === 1
+            ? "1 vehículo requiere mantención preventiva"
+            : `${alerts.length} vehículos requieren mantención preventiva`
         }
       />
       <div className="px-4 pb-6 space-y-4 lg:px-8">
@@ -109,7 +111,7 @@ export default function Alerts() {
               <div className={`${t.card} overflow-hidden`}>
                 <div className={`flex items-center justify-between px-4 py-3.5 ${t.cardBorder}`}>
                   <h2 className={t.cardTitle}>Sin preventiva registrada</h2>
-                  <span className={t.cardMeta}>{sinRegistro.length} unidades</span>
+                  <span className={t.cardMeta}>{unidades(sinRegistro.length)}</span>
                 </div>
                 <div className={t.divide}>
                   {sinRegistro.map((v) => (

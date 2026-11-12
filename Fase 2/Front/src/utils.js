@@ -77,3 +77,8 @@ export function normalizarRut(rut) {
 export function clp(n) {
   return `$${n.toLocaleString("es-CL")}`;
 }
+
+// Cantidad de vehículos en los encabezados de listas: "1 unidad", "3 unidades".
+export function unidades(n) {
+  return `${n} ${n === 1 ? "unidad" : "unidades"}`;
+}
