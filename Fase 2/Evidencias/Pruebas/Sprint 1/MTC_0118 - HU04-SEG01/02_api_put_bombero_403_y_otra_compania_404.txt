@@ -1,0 +1,28 @@
+MTC_0118 - HU04-SEG01: Validar los permisos para editar vehículos
+Fecha de ejecución: 12-11-2026
+Usuarios: bombero.c1@sigmave.cl (rol bombero, Primera Compañía) y teniente.c1@sigmave.cl (rol teniente_tercero, Primera Compañía)
+
+1) Ficha de B-1 con la sesión de bombero.c1:
+   No aparece el botón «Editar» (ver 01_bombero_c1_ficha_B-1_sin_editar.jpg)
+
+2) Petición a la API con la cookie de sesión de bombero.c1:
+   PUT /api/vehiculos/1
+   {"nomenclatura":"B-1","tipo":"Bomba","patente":"KLHT21","marca":"Mercedes-Benz","modelo":"Atego 1726","ano_fabricacion":2019,"id_compania":1}
+
+   Respuesta:
+   HTTP 403 Forbidden
+   {"error":"No tienes permisos para esta acción"}
+
+3) Petición a la API con la cookie de sesión de teniente.c1 sobre B-2 (Segunda Compañía, id 3):
+   PUT /api/vehiculos/3
+   {"nomenclatura":"B-1","tipo":"Bomba","patente":"KLHT21","marca":"Mercedes-Benz","modelo":"Atego 1726","ano_fabricacion":2019,"id_compania":2}
+
+   Respuesta:
+   HTTP 404 Not Found
+   {"error":"Vehículo no encontrado"}
+
+4) Verificación en la base de datos (psql, supabase_db_sigmave), antes y después de las peticiones:
+   select nomenclatura||'|'||patente||'|'||modelo from vehiculo where id_vehiculo in (1, 3)
+   antes:   id 1 -> B-1|KLHT99|Atego 1730   |   id 3 -> B-2|LBRC73|Eurocargo 150
+   después: id 1 -> B-1|KLHT99|Atego 1730   |   id 3 -> B-2|LBRC73|Eurocargo 150
+   Ningún vehículo cambió. (B-1 tiene KLHT99 / Atego 1730 por la ejecución previa de MTC_0110.)

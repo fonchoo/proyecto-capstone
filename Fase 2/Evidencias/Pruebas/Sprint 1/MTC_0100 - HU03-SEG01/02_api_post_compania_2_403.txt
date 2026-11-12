@@ -1,0 +1,20 @@
+MTC_0100 - HU03-SEG01: Validar que no se pueda registrar un vehículo en otra compañía
+Fecha de ejecución: 12-11-2026
+Usuario: teniente.c1@sigmave.cl (rol teniente_tercero, Primera Compañía)
+
+1) Formulario «Registrar vehículo» con la sesión de teniente.c1:
+   Opciones del selector de compañía: "Selecciona una compañía...", "Primera Compañía"
+   No se ofrece la Segunda Compañía (ver 01_teniente_c1_formulario_compania_primera.jpg)
+
+2) Petición a la API con la cookie de sesión de teniente.c1:
+   POST /api/vehiculos
+   {"nomenclatura":"X-1","tipo":"Bomba","patente":"XXXX11","marca":"Iveco","ano_fabricacion":2020,"id_compania":2}
+
+   Respuesta:
+   HTTP 403 Forbidden
+   {"error":"No puedes asignar vehículos a una compañía que no es la tuya"}
+
+3) Verificación en la base de datos (psql, supabase_db_sigmave), después de la petición:
+   select count(*) from vehiculo where nomenclatura = 'X-1'
+   -> 0
+   El vehículo no se creó.

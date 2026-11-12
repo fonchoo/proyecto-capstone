@@ -1,0 +1,19 @@
+MTC_0106 - HU03-SEG02: Validar que un bombero no pueda registrar vehículos
+Fecha de ejecución: 12-11-2026
+Usuario: bombero.c1@sigmave.cl (rol bombero, Primera Compañía)
+
+1) Dashboard con la sesión de bombero.c1:
+   No aparece el botón «Registrar vehículo» (ver 01_bombero_c1_dashboard_sin_boton_registrar.jpg)
+
+2) Petición a la API con la cookie de sesión de bombero.c1:
+   POST /api/vehiculos
+   {"nomenclatura":"X-2","tipo":"Bomba","patente":"XXXX22","marca":"Iveco","ano_fabricacion":2020,"id_compania":1}
+
+   Respuesta:
+   HTTP 403 Forbidden
+   {"error":"No tienes permisos para esta acción"}
+
+3) Verificación en la base de datos (psql, supabase_db_sigmave), después de la petición:
+   select count(*) from vehiculo where nomenclatura = 'X-2'
+   -> 0
+   El vehículo no se creó.
