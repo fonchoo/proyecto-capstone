@@ -147,9 +147,11 @@ export default function Dashboard() {
                       <span className={t.dot}>·</span>
                       <span className={t.vehType}>{v.type}</span>
                       {/* Solo el administrador ve varias compañías: le
-                          indica de cuál es cada vehículo. */}
+                          indica de cuál es cada vehículo. En el teléfono
+                          va en su propia línea (abajo) para no comerse el
+                          modelo. */}
                       {isAdmin && v.nombre_compania && (
-                        <span className={t.companyTag} title={v.nombre_compania}>
+                        <span className={`${t.companyTag} hidden sm:inline-block`} title={v.nombre_compania}>
                           {v.nombre_compania}
                         </span>
                       )}
@@ -163,6 +165,11 @@ export default function Dashboard() {
                     >
                       {prev.texto}
                     </p>
+                    {isAdmin && v.nombre_compania && (
+                      <span className={`${t.companyTag} inline-block mt-1.5 sm:hidden`} title={v.nombre_compania}>
+                        {v.nombre_compania}
+                      </span>
+                    )}
                   </div>
                   <StatusBadge status={v.status} />
                   <IcChevron cls={t.chevron} />

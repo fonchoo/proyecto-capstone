@@ -29,10 +29,16 @@ export default function Alerts() {
   const alerts = [...vencidas, ...proximas];
   const sinRegistro = vehicles.filter((v) => v.preventiveStatus === "sin_registro");
 
-  const companyTag = (v) =>
+  // Compañía del vehículo (solo el administrador ve varias). En el
+  // teléfono va en su propia línea, debajo, para no comerse el modelo:
+  // "linea" es la versión de pantallas anchas y "abajo" la del teléfono.
+  const companyTag = (v, donde) =>
     isAdmin &&
     v.nombre_compania && (
-      <span className={t.companyTag} title={v.nombre_compania}>
+      <span
+        className={`${t.companyTag} ${donde === "linea" ? "hidden sm:inline-block" : "inline-block mt-1.5 sm:hidden"}`}
+        title={v.nombre_compania}
+      >
         {v.nombre_compania}
       </span>
     );
@@ -75,18 +81,20 @@ export default function Alerts() {
                       <Link
                         key={v.id}
                         to={`/vehiculos/${v.id}`}
-                        className={`${t.rowBtn} w-full flex items-center gap-4 px-4 py-4`}
+                        className={`${t.rowBtn} w-full flex items-center gap-3 sm:gap-4 px-4 py-4`}
                       >
-                        <div className={t.alertIconBox(prev.nivel)}>
+                        {/* En el teléfono no hay espacio: el texto ya va con el color del nivel. */}
+                        <div className={`${t.alertIconBox(prev.nivel)} hidden sm:flex`}>
                           <IcAlert cls={t.alertIcon(prev.nivel)} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className={t.vehCode}>{v.code}</span>
                             <span className={t.vehType}>{v.type}</span>
-                            {companyTag(v)}
+                            {companyTag(v, "linea")}
                           </div>
                           <p className={t.alertSub(prev.nivel)}>{prev.texto}</p>
+                          {companyTag(v, "abajo")}
                         </div>
                         <StatusBadge status={v.status} />
                         <IcChevron cls={t.chevron} />
@@ -114,11 +122,12 @@ export default function Alerts() {
                         <div className="flex items-center gap-2">
                           <span className={t.vehCode}>{v.code}</span>
                           <span className={t.vehType}>{v.type}</span>
-                          {companyTag(v)}
+                          {companyTag(v, "linea")}
                         </div>
                         <p className={t.vehSub}>
                           Registra su última preventiva para calcular el vencimiento
                         </p>
+                        {companyTag(v, "abajo")}
                       </div>
                       <StatusBadge status={v.status} />
                       <IcChevron cls={t.chevron} />

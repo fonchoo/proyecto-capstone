@@ -76,7 +76,7 @@ export default function TopNav() {
 
   return (
     <header className={t.topNav}>
-      <div className="flex items-center gap-2.5 mr-6 lg:mr-8 shrink-0">
+      <div className="flex items-center gap-2.5 mr-3 sm:mr-6 lg:mr-8 shrink-0">
         <div className={t.logoBox}>
           <IcFlame cls={t.logoIcon} />
         </div>
@@ -100,7 +100,9 @@ export default function TopNav() {
         ))}
       </nav>
 
-      <div className="flex items-center gap-2.5 ml-auto lg:ml-4 shrink-0">
+      {/* min-w-0: en el teléfono este bloque se ajusta (el selector se
+          achica) en vez de empujar la página más allá de la pantalla. */}
+      <div className="flex items-center gap-1.5 sm:gap-2.5 ml-auto lg:ml-4 min-w-0">
         {/* Solo el administrador ve todas las compañías y elige cuál
             revisar. El resto ve siempre la suya (lo limita la API). */}
         {isAdmin && companias.length > 0 && (
@@ -137,8 +139,7 @@ export default function TopNav() {
             >
               <span className={t.avatarInitials}>{initials}</span>
             </button>
-            <span className={t.userName}>{userName}</span>
-            <span className={t.userNameShort}>{userName}</span>
+            <span className={t.navUserName}>{userName}</span>
           </div>
           {menuOpen && (
             <div className={t.userMenu}>

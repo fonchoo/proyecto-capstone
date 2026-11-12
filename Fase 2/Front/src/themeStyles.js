@@ -4,7 +4,7 @@ const baseInput =
 export const themes = {
   v1: {
     shell: "h-full bg-gray-950 text-white",
-    topNav: "flex items-center h-14 bg-gray-950 border-b border-gray-800/80 px-6 shrink-0",
+    topNav: "flex items-center h-14 bg-gray-950 border-b border-gray-800/80 px-3 sm:px-6 shrink-0",
     logoBox: "w-7 h-7 rounded-lg bg-red-700/20 border border-red-600/30 flex items-center justify-center shrink-0",
     logoIcon: "w-4 h-4 text-red-400",
     brand: "text-xs font-bold text-gray-600 tracking-wide uppercase hidden xl:block",
@@ -15,17 +15,17 @@ export const themes = {
     tabBtn: (active) =>
       `px-4 py-2.5 -mb-px border-b-2 text-sm font-medium transition-colors ${active ? "border-blue-500 text-blue-400" : "border-transparent text-gray-500 hover:text-gray-200"}`,
     toggleBtn: "flex items-center justify-center w-8 h-8 rounded-lg text-amber-400 hover:text-amber-300 hover:bg-gray-800/60 transition-colors",
-    companySelect: "h-8 max-w-[11rem] sm:max-w-[14rem] px-2.5 bg-gray-900 border border-gray-800 rounded-lg text-gray-200 text-sm truncate focus:outline-none focus:border-blue-500 transition-colors",
+    companySelect: "h-8 min-w-0 max-w-[8.5rem] sm:max-w-[14rem] px-2.5 bg-gray-900 border border-gray-800 rounded-lg text-gray-200 text-sm truncate focus:outline-none focus:border-blue-500 transition-colors",
     avatarBox: "w-7 h-7 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center",
     avatarInitials: "text-[11px] font-bold text-blue-400",
-    userName: "text-sm text-gray-400 hidden xl:block",
-    userNameShort: "text-sm text-gray-400 xl:hidden",
+    // Nombre en la barra superior (solo desde md: en el teléfono no cabe).
+    navUserName: "text-sm text-gray-400 hidden md:block max-w-[10rem] truncate",
     avatarBtn: "flex items-center justify-center w-7 h-7 rounded-full bg-blue-600/20 border border-blue-500/30 hover:bg-blue-600/30 transition-colors",
     userMenu: "absolute right-0 top-full mt-2 w-56 rounded-xl border border-gray-800 bg-gray-900 shadow-xl z-50 p-2",
     // Notificaciones (HU11): campana con contador y panel desplegable.
     notifBtn: "relative flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-gray-200 hover:bg-gray-800/60 transition-colors",
     notifBadge: "absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[1.125rem] h-[1.125rem] px-1 rounded-full bg-red-600 text-white text-[10px] font-bold leading-none",
-    notifPanel: "absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-gray-800 bg-gray-900 shadow-xl z-50 p-2",
+    notifPanel: "fixed left-3 right-3 top-14 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80 rounded-xl border border-gray-800 bg-gray-900 shadow-xl z-50 p-2",
     notifItem: (unread) =>
       `block w-full text-left px-3 py-2.5 rounded-lg transition-colors hover:bg-gray-800/60 ${unread ? "bg-blue-600/10" : ""}`,
     notifMsg: (unread) => `text-sm ${unread ? "text-gray-100 font-medium" : "text-gray-400"}`,
@@ -51,7 +51,7 @@ export const themes = {
     cardMeta: "text-xs text-gray-600 font-mono",
     divide: "divide-y divide-gray-800/60",
     rowBtn: "w-full flex items-center gap-3 px-4 py-3.5 hover:bg-gray-800/50 active:bg-gray-800 transition-colors text-left group",
-    vehCode: "font-mono text-sm font-bold text-white",
+    vehCode: "shrink-0 whitespace-nowrap font-mono text-sm font-bold text-white",
     vehCodeLg: "font-mono text-4xl font-bold text-white leading-none",
     dot: "text-gray-700 text-xs",
     vehType: "text-sm text-gray-300 truncate",
@@ -139,7 +139,7 @@ export const themes = {
     userAvatar: "w-9 h-9 rounded-full bg-gray-800 border border-gray-700/80 flex items-center justify-center shrink-0",
     userAvatarTxt: "text-xs font-bold text-gray-300",
     userName: "text-sm font-semibold text-white truncate",
-    userEmail: "text-xs text-gray-600 truncate font-mono",
+    userEmail: "text-xs text-gray-600 break-all sm:truncate font-mono",
     roleBadge: (role) =>
       `text-xs px-2.5 py-1 rounded-full font-medium shrink-0 ${
         role === "Administrador" ? "bg-purple-500/10 text-purple-400" :
@@ -172,7 +172,7 @@ export const themes = {
 
   v2: {
     shell: "h-full bg-gray-50 text-gray-900",
-    topNav: "flex items-center h-14 bg-white border-b border-gray-100 px-6 shrink-0 shadow-sm",
+    topNav: "flex items-center h-14 bg-white border-b border-gray-100 px-3 sm:px-6 shrink-0 shadow-sm",
     logoBox: "w-7 h-7 rounded-lg bg-gray-900 flex items-center justify-center shrink-0",
     logoIcon: "w-4 h-4 text-white",
     brand: "text-xs font-medium text-gray-400 hidden xl:block",
@@ -183,17 +183,17 @@ export const themes = {
     tabBtn: (active) =>
       `px-4 py-2.5 -mb-px border-b-2 text-sm font-medium transition-colors ${active ? "border-gray-900 text-gray-900" : "border-transparent text-gray-500 hover:text-gray-800"}`,
     toggleBtn: "flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-colors",
-    companySelect: "h-8 max-w-[11rem] sm:max-w-[14rem] px-2.5 bg-white border border-gray-200 rounded-lg text-gray-700 text-sm truncate focus:outline-none focus:border-gray-400 transition-colors",
+    companySelect: "h-8 min-w-0 max-w-[8.5rem] sm:max-w-[14rem] px-2.5 bg-white border border-gray-200 rounded-lg text-gray-700 text-sm truncate focus:outline-none focus:border-gray-400 transition-colors",
     avatarBox: "w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center",
     avatarInitials: "text-[11px] font-bold text-gray-600",
-    userName: "text-sm text-gray-600 hidden xl:block",
-    userNameShort: "text-sm text-gray-600 xl:hidden",
+    // Nombre en la barra superior (solo desde md: en el teléfono no cabe).
+    navUserName: "text-sm text-gray-600 hidden md:block max-w-[10rem] truncate",
     avatarBtn: "flex items-center justify-center w-7 h-7 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors",
     userMenu: "absolute right-0 top-full mt-2 w-56 rounded-xl border border-gray-100 bg-white shadow-lg z-50 p-2",
     // Notificaciones (HU11): campana con contador y panel desplegable.
     notifBtn: "relative flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-colors",
     notifBadge: "absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[1.125rem] h-[1.125rem] px-1 rounded-full bg-red-600 text-white text-[10px] font-bold leading-none",
-    notifPanel: "absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-gray-100 bg-white shadow-lg z-50 p-2",
+    notifPanel: "fixed left-3 right-3 top-14 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80 rounded-xl border border-gray-100 bg-white shadow-lg z-50 p-2",
     notifItem: (unread) =>
       `block w-full text-left px-3 py-2.5 rounded-lg transition-colors hover:bg-gray-50 ${unread ? "bg-blue-50" : ""}`,
     notifMsg: (unread) => `text-sm ${unread ? "text-gray-900 font-medium" : "text-gray-500"}`,
@@ -219,7 +219,7 @@ export const themes = {
     cardMeta: "text-xs text-gray-400",
     divide: "divide-y divide-gray-100",
     rowBtn: "w-full flex items-center gap-3 px-4 py-4 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left group",
-    vehCode: "text-sm font-bold text-gray-900",
+    vehCode: "shrink-0 whitespace-nowrap text-sm font-bold text-gray-900",
     vehCodeLg: "text-3xl font-bold text-gray-900 leading-none",
     dot: "text-gray-300 text-xs",
     vehType: "text-sm text-gray-600 truncate",
@@ -232,8 +232,8 @@ export const themes = {
     infoTile: "bg-gray-50 rounded-xl px-3 py-2.5",
     infoTileLabel: "text-xs text-gray-400 mb-0.5",
     infoTileValue: "text-sm font-semibold text-gray-900",
-    reportFaultBtn: "py-3.5 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors font-semibold text-sm",
-    registerBtn: "py-3.5 rounded-xl bg-gray-900 hover:bg-gray-800 text-white transition-colors font-semibold text-sm",
+    reportFaultBtn: "flex items-center justify-center gap-2 py-3.5 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors font-semibold text-sm",
+    registerBtn: "flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gray-900 hover:bg-gray-800 text-white transition-colors font-semibold text-sm",
     histChip: (type) =>
       `text-xs px-2 py-0.5 rounded-full font-medium ${type === "preventiva" ? "bg-blue-50 text-blue-700" : "bg-orange-50 text-orange-700"}`,
     histDate: "text-xs text-gray-400",
@@ -297,7 +297,7 @@ export const themes = {
     userAvatar: "w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center shrink-0",
     userAvatarTxt: "text-xs font-bold text-gray-600",
     userName: "text-sm font-semibold text-gray-900 truncate",
-    userEmail: "text-xs text-gray-400 truncate",
+    userEmail: "text-xs text-gray-400 break-all sm:truncate",
     roleBadge: (role) =>
       `text-xs px-2.5 py-1 rounded-full font-medium shrink-0 ${
         role === "Administrador" ? "bg-purple-50 text-purple-700" :

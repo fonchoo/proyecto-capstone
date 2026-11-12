@@ -23,8 +23,8 @@ export default function StatusBadge({ status, large = false }) {
 
   if (large && theme === "v1") {
     return (
-      <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold tracking-wide ${v.large}`}>
-        <span className={`w-2.5 h-2.5 rounded-full ${v.dot}`} />
+      <span className={`inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold tracking-wide whitespace-nowrap ${v.large}`}>
+        <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${v.dot}`} />
         {LABELS[status].toUpperCase()}
       </span>
     );
