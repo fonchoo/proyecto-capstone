@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { fecha } from "./utils.js";
 import { canDeriveFault } from "./permissions.js";
 
@@ -195,6 +195,7 @@ export function VehicleProvider({ children }) {
   // NOTIF_INTERVALO_MS mientras la app está abierta. Son avisos dentro
   // de la app, no push del sistema operativo.
   useEffect(() => {
+    ultimaNotifRef.current = null;
     if (!user) {
       setNotifications([]);
       setUnreadCount(0);
@@ -209,6 +210,12 @@ export function VehicleProvider({ children }) {
   // (el estado del vehículo lo recalcula la API en cada paso).
   const refreshAll = () =>
     Promise.all([refreshVehicles(), refreshMaintenance(), refreshFaults()]);
+  // El intervalo de notificaciones guarda la versión de refreshAll de
+  // cuando se creó; con el ref usa siempre la actual.
+  const refreshAllRef = useRef(refreshAll);
+  refreshAllRef.current = refreshAll;
+  // Notificación más reciente ya vista (null = primera consulta).
+  const ultimaNotifRef = useRef(null);
 
   // fetch JSON con manejo de errores común: lanza Error con el mensaje
   // de la API (o "porDefecto"). Si la API detalla errores por campo
@@ -298,6 +305,14 @@ export function VehicleProvider({ children }) {
       const body = await res.json();
       setNotifications(body.notificaciones);
       setUnreadCount(body.no_leidas);
+      // Si llegó un aviso nuevo, cambió una falla: se recargan vehículos,
+      // mantenciones y fallas para que el contador de «Fallas» y el estado
+      // de la flota coincidan con la campana sin recargar la página.
+      const ultima = body.notificaciones[0]?.id_notificacion ?? 0;
+      if (ultimaNotifRef.current !== null && ultima > ultimaNotifRef.current) {
+        refreshAllRef.current();
+      }
+      ultimaNotifRef.current = ultima;
     } catch {
       // Sin conexión no cambian las actuales.
     }
