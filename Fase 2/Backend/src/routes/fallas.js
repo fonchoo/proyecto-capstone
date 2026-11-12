@@ -21,6 +21,7 @@ import { pool } from "../db.js";
 import { ROLES_MANTENCION, requireRol } from "../auth.js";
 import { companiasVisibles, filtroCompanias, puedeUsarVehiculo } from "../alcance.js";
 import { enTransaccion, recalcularEstadoVehiculo } from "../estadoVehiculo.js";
+import { notificarFallaDerivada, notificarFallaReportada } from "../notificaciones.js";
 
 const router = Router();
 
@@ -103,9 +104,10 @@ router.get("/:id", async (req, res, next) => {
 });
 
 // ---------- POST /api/fallas (reportar) ----------
-// Guarda el reporte y recalcula el estado del vehículo en una sola
-// transacción (normalmente queda "no_operativo"; si ya está en el
-// taller sigue "en_mantencion", ver src/estadoVehiculo.js).
+// Guarda el reporte, recalcula el estado del vehículo (normalmente
+// queda "no_operativo"; si ya está en el taller sigue "en_mantencion",
+// ver src/estadoVehiculo.js) y avisa a la compañía (HU11), todo en una
+// sola transacción.
 router.post("/", async (req, res, next) => {
   const { id_vehiculo, urgencia } = req.body;
   const descripcion =
@@ -140,6 +142,19 @@ router.post("/", async (req, res, next) => {
         [urgencia, descripcion, id_vehiculo, req.usuario.id_usuario]
       );
       await recalcularEstadoVehiculo(client, id_vehiculo);
+
+      const vehiculo = await client.query(
+        "SELECT nomenclatura, id_compania FROM vehiculo WHERE id_vehiculo = $1",
+        [id_vehiculo]
+      );
+      await notificarFallaReportada(client, {
+        ...vehiculo.rows[0],
+        id_reporte_falla: rows[0].id_reporte_falla,
+        id_vehiculo: Number(id_vehiculo),
+        id_usuario: req.usuario.id_usuario,
+        urgencia,
+        descripcion,
+      });
       return rows[0].id_reporte_falla;
     });
 
@@ -151,7 +166,8 @@ router.post("/", async (req, res, next) => {
 
 // ---------- PATCH /api/fallas/:id/derivar (HU06) ----------
 // El Teniente Tercero (o un rol superior) deriva un reporte PENDIENTE
-// al Inspector de Material Mayor, que lo ve en su panel de fallas.
+// al Inspector de Material Mayor, que lo ve en su panel de fallas y
+// recibe una notificación (HU06 CA5) en la misma transacción.
 router.patch("/:id/derivar", requireRol(...ROLES_MANTENCION), async (req, res, next) => {
   try {
     const reporte = await buscarEnAlcance(req, req.params.id);
@@ -160,12 +176,18 @@ router.patch("/:id/derivar", requireRol(...ROLES_MANTENCION), async (req, res, n
     }
     // "AND estado_reporte = 'pendiente'": si dos personas derivan a la
     // vez, solo una lo logra (la otra recibe el 409).
-    const { rowCount } = await pool.query(
-      `UPDATE reporte_falla
-       SET estado_reporte = 'derivado', fecha_derivacion = now(), id_usuario_deriva = $2
-       WHERE id_reporte_falla = $1 AND estado_reporte = 'pendiente'`,
-      [reporte.id_reporte_falla, req.usuario.id_usuario]
-    );
+    const rowCount = await enTransaccion(pool, async (client) => {
+      const resultado = await client.query(
+        `UPDATE reporte_falla
+         SET estado_reporte = 'derivado', fecha_derivacion = now(), id_usuario_deriva = $2
+         WHERE id_reporte_falla = $1 AND estado_reporte = 'pendiente'`,
+        [reporte.id_reporte_falla, req.usuario.id_usuario]
+      );
+      if (resultado.rowCount > 0) {
+        await notificarFallaDerivada(client, reporte, req.usuario.id_usuario);
+      }
+      return resultado.rowCount;
+    });
     if (rowCount === 0) {
       return res
         .status(409)

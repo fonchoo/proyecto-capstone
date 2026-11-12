@@ -4,6 +4,9 @@ import { canDeriveFault } from "./permissions.js";
 
 const VehicleContext = createContext(null);
 
+// Cada cuánto se consultan las notificaciones con la app abierta.
+const NOTIF_INTERVALO_MS = 30000;
+
 // ------------------------------------------------------------
 // SESIÓN
 // ------------------------------------------------------------
@@ -88,6 +91,10 @@ export function VehicleProvider({ children }) {
   // Reglas de negocio de la API (p. ej. meses entre preventivas).
   const [config, setConfig] = useState(null);
   const [selectedCompania, setSelectedCompania] = useState("");
+  // Notificaciones dentro de la app (HU11): las últimas y cuántas no
+  // se han leído.
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const isAdmin = user?.nombre_rol === "administrador";
   const companiaQuery =
@@ -181,6 +188,20 @@ export function VehicleProvider({ children }) {
     refreshFaults();
   }, [user?.id_usuario, companiaQuery]);
 
+  // Notificaciones (HU11): se consultan al iniciar sesión y cada
+  // NOTIF_INTERVALO_MS mientras la app está abierta. Son avisos dentro
+  // de la app, no push del sistema operativo.
+  useEffect(() => {
+    if (!user) {
+      setNotifications([]);
+      setUnreadCount(0);
+      return;
+    }
+    refreshNotifications();
+    const timer = setInterval(refreshNotifications, NOTIF_INTERVALO_MS);
+    return () => clearInterval(timer);
+  }, [user?.id_usuario]);
+
   // Recarga todo lo que puede cambiar con el flujo falla -> mantención
   // (el estado del vehículo lo recalcula la API en cada paso).
   const refreshAll = () =>
@@ -266,6 +287,29 @@ export function VehicleProvider({ children }) {
     return body;
   };
 
+  // HU11: notificaciones dentro de la app del usuario de la sesión.
+  const refreshNotifications = async () => {
+    try {
+      const res = await fetch("/api/notificaciones");
+      if (handleUnauthorized(res) || !res.ok) return;
+      const body = await res.json();
+      setNotifications(body.notificaciones);
+      setUnreadCount(body.no_leidas);
+    } catch {
+      // Sin conexión no cambian las actuales.
+    }
+  };
+
+  const markNotificationRead = async (idNotificacion) => {
+    await fetch(`/api/notificaciones/${idNotificacion}/leer`, { method: "PATCH" }).catch(() => {});
+    await refreshNotifications();
+  };
+
+  const markAllNotificationsRead = async () => {
+    await fetch("/api/notificaciones/leer-todas", { method: "PATCH" }).catch(() => {});
+    await refreshNotifications();
+  };
+
   // La cookie ya la dejó la API en la respuesta del login; acá solo
   // se guardan los datos del usuario para la UI.
   const login = (userData) => {
@@ -306,6 +350,11 @@ export function VehicleProvider({ children }) {
         refreshFaults,
         deriveFault,
         finishMaintenance,
+        notifications,
+        unreadCount,
+        refreshNotifications,
+        markNotificationRead,
+        markAllNotificationsRead,
       }}
     >
       {children}

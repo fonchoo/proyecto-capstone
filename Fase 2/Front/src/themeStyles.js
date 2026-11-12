@@ -22,6 +22,15 @@ export const themes = {
     userNameShort: "text-sm text-gray-400 xl:hidden",
     avatarBtn: "flex items-center justify-center w-7 h-7 rounded-full bg-blue-600/20 border border-blue-500/30 hover:bg-blue-600/30 transition-colors",
     userMenu: "absolute right-0 top-full mt-2 w-56 rounded-xl border border-gray-800 bg-gray-900 shadow-xl z-50 p-2",
+    // Notificaciones (HU11): campana con contador y panel desplegable.
+    notifBtn: "relative flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-gray-200 hover:bg-gray-800/60 transition-colors",
+    notifBadge: "absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[1.125rem] h-[1.125rem] px-1 rounded-full bg-red-600 text-white text-[10px] font-bold leading-none",
+    notifPanel: "absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-gray-800 bg-gray-900 shadow-xl z-50 p-2",
+    notifItem: (unread) =>
+      `block w-full text-left px-3 py-2.5 rounded-lg transition-colors hover:bg-gray-800/60 ${unread ? "bg-blue-600/10" : ""}`,
+    notifMsg: (unread) => `text-sm ${unread ? "text-gray-100 font-medium" : "text-gray-400"}`,
+    notifDate: "text-[11px] text-gray-600 font-mono mt-0.5",
+    notifLink: "text-xs text-blue-400 hover:text-blue-300 font-medium",
     menuLabel: "text-[10px] text-gray-600 uppercase tracking-widest font-semibold",
     menuName: "text-sm font-semibold text-white",
     menuEmail: "text-xs text-gray-500 font-mono",
@@ -181,6 +190,15 @@ export const themes = {
     userNameShort: "text-sm text-gray-600 xl:hidden",
     avatarBtn: "flex items-center justify-center w-7 h-7 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors",
     userMenu: "absolute right-0 top-full mt-2 w-56 rounded-xl border border-gray-100 bg-white shadow-lg z-50 p-2",
+    // Notificaciones (HU11): campana con contador y panel desplegable.
+    notifBtn: "relative flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-colors",
+    notifBadge: "absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[1.125rem] h-[1.125rem] px-1 rounded-full bg-red-600 text-white text-[10px] font-bold leading-none",
+    notifPanel: "absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-gray-100 bg-white shadow-lg z-50 p-2",
+    notifItem: (unread) =>
+      `block w-full text-left px-3 py-2.5 rounded-lg transition-colors hover:bg-gray-50 ${unread ? "bg-blue-50" : ""}`,
+    notifMsg: (unread) => `text-sm ${unread ? "text-gray-900 font-medium" : "text-gray-500"}`,
+    notifDate: "text-[11px] text-gray-400 mt-0.5",
+    notifLink: "text-xs text-gray-700 hover:text-gray-900 font-medium",
     menuLabel: "text-xs text-gray-400 uppercase tracking-wide font-medium",
     menuName: "text-sm font-semibold text-gray-900",
     menuEmail: "text-xs text-gray-400 font-mono",

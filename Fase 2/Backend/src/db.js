@@ -27,3 +27,11 @@ export const pool = new Pool({
   password: process.env.PGPASSWORD,
   database: process.env.PGDATABASE,
 });
+
+// Si Postgres se reinicia (p. ej. "supabase db reset") o corta una
+// conexión INACTIVA del pool, "pg" emite "error" en el pool. Sin este
+// listener Node lo trata como no manejado y la API entera se cae. Con
+// él, el pool descarta esa conexión y abre otra en la próxima consulta.
+pool.on("error", (error) => {
+  console.error("Se perdió una conexión inactiva con Postgres:", error.message);
+});

@@ -5,6 +5,7 @@ import { useTheme } from "../theme.jsx";
 import { useVehicles } from "../store.jsx";
 import { canViewTab, faultBadgeCount } from "../permissions.js";
 import { IcFlame, IcLogOut, IcMoon, IcSun } from "./Icons.jsx";
+import NotificationBell from "./NotificationBell.jsx";
 
 export default function TopNav() {
   const { theme, toggle } = useTheme();
@@ -126,6 +127,7 @@ export default function TopNav() {
         >
           {theme === "v1" ? <IcSun cls="w-4 h-4" /> : <IcMoon cls="w-4 h-4" />}
         </button>
+        <NotificationBell />
         <div className="relative" ref={menuRef}>
           <div className="flex items-center gap-2.5">
             <button

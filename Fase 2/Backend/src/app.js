@@ -14,6 +14,7 @@ import usuariosRouter from "./routes/usuarios.js";
 import vehiculosRouter from "./routes/vehiculos.js";
 import tiposMantencionRouter from "./routes/tiposMantencion.js";
 import mantenimientosRouter from "./routes/mantenimientos.js";
+import notificacionesRouter from "./routes/notificaciones.js";
 import fallasRouter from "./routes/fallas.js";
 import { DIAS_AVISO_PREVENTIVA, MESES_PREVENTIVA } from "./preventiva.js";
 
@@ -37,6 +38,7 @@ app.use("/api/usuarios", usuariosRouter);
 app.use("/api/vehiculos", vehiculosRouter);
 app.use("/api/tipos-mantencion", tiposMantencionRouter);
 app.use("/api/mantenimientos", mantenimientosRouter);
+app.use("/api/notificaciones", notificacionesRouter);
 app.use("/api/fallas", fallasRouter);
 
 // Reglas de negocio que el front necesita mostrar (definidas una sola
