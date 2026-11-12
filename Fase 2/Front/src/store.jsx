@@ -25,7 +25,10 @@ const STATUS_MAP = {
 const mapVehicle = (v) => ({
   id: String(v.id_vehiculo),
   code: v.nomenclatura,
+  // "type" es marca + modelo (así lo muestran el listado y la ficha);
+  // "kind" es el tipo de vehículo (Bomba, Rescate, ...), HU03.
   type: [v.marca, v.modelo].filter(Boolean).join(" ") || "—",
+  kind: v.tipo || "—",
   brand: v.marca || "—",
   model: v.modelo || "—",
   year: v.ano_fabricacion || "—",
@@ -180,7 +183,8 @@ export function VehicleProvider({ children }) {
     Promise.all([refreshVehicles(), refreshMaintenance(), refreshFaults()]);
 
   // fetch JSON con manejo de errores común: lanza Error con el mensaje
-  // de la API (o "porDefecto").
+  // de la API (o "porDefecto"). Si la API detalla errores por campo
+  // ("campos"), van en error.campos para mostrarlos bajo cada input.
   const enviar = async (url, method, data, porDefecto) => {
     const res = await fetch(url, {
       method,
@@ -189,20 +193,29 @@ export function VehicleProvider({ children }) {
     });
     const body = await res.json().catch(() => ({}));
     if (handleUnauthorized(res)) throw new Error("La sesión expiró");
-    if (!res.ok) throw new Error(body.error || porDefecto);
+    if (!res.ok) {
+      const error = new Error(body.error || porDefecto);
+      error.campos = body.campos;
+      throw error;
+    }
     return body;
   };
 
+  // HU03: crear vehículo.
   const addVehicle = async (data) => {
-    const res = await fetch("/api/vehiculos", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    const body = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      throw new Error(body.error || "No se pudo registrar el vehículo");
-    }
+    const body = await enviar("/api/vehiculos", "POST", data, "No se pudo registrar el vehículo");
+    await refreshVehicles();
+    return body;
+  };
+
+  // HU04: editar vehículo. El estado no se envía: lo calcula la API.
+  const updateVehicle = async (idVehiculo, data) => {
+    const body = await enviar(
+      `/api/vehiculos/${idVehiculo}`,
+      "PUT",
+      data,
+      "No se pudo actualizar el vehículo"
+    );
     await refreshVehicles();
     return body;
   };
@@ -287,6 +300,7 @@ export function VehicleProvider({ children }) {
         setSelectedCompania,
         refreshVehicles,
         addVehicle,
+        updateVehicle,
         addMaintenance,
         reportFault,
         openFaults,

@@ -78,10 +78,10 @@ INSERT INTO tipo_mantencion (id_tipo_mantencion, nombre, descripcion) VALUES
 ON CONFLICT (id_tipo_mantencion) DO NOTHING;
 
 -- Vehículos: 2 de la Primera compañía, 1 de la Segunda.
-INSERT INTO vehiculo (id_vehiculo, nomenclatura, patente, marca, modelo, ano_fabricacion, estado_vehiculo, id_compania) VALUES
-  (1, 'B-1', 'KLHT21', 'Mercedes-Benz', 'Atego 1726',   2019, 'operativo',     1),
-  (2, 'R-1', 'JXPS48', 'Renault',       'Midlum 300',   2016, 'en_mantencion', 1),
-  (3, 'B-2', 'LBRC73', 'Iveco',         'Eurocargo 150', 2021, 'operativo',     2)
+INSERT INTO vehiculo (id_vehiculo, nomenclatura, tipo, patente, marca, modelo, ano_fabricacion, estado_vehiculo, id_compania) VALUES
+  (1, 'B-1', 'Bomba',   'KLHT21', 'Mercedes-Benz', 'Atego 1726',   2019, 'operativo',     1),
+  (2, 'R-1', 'Rescate', 'JXPS48', 'Renault',       'Midlum 300',   2016, 'en_mantencion', 1),
+  (3, 'B-2', 'Bomba',   'LBRC73', 'Iveco',         'Eurocargo 150', 2021, 'operativo',     2)
 ON CONFLICT DO NOTHING;
 
 -- Mantenciones: una por vehículo, registrada por personal de la MISMA

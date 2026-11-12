@@ -1,43 +1,27 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { themes } from "../themeStyles.js";
 import { useTheme } from "../theme.jsx";
 import { useVehicles } from "../store.jsx";
+import { canManageVehicles } from "../permissions.js";
 import MetricCard from "../components/MetricCard.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
 import EmptyState from "../components/EmptyState.jsx";
+import VehicleForm, { VEHICULO_VACIO } from "../components/VehicleForm.jsx";
 import { IcAlert, IcChevron, IcPlus } from "../components/Icons.jsx";
 import { estadoPreventiva } from "../utils.js";
-
-const ESTADOS = [
-  { value: "operativo", label: "Operativo" },
-  { value: "en_mantencion", label: "En mantención" },
-  { value: "no_operativo", label: "No operativo" },
-];
-
-const FORM_INICIAL = {
-  nomenclatura: "",
-  patente: "",
-  marca: "",
-  modelo: "",
-  ano_fabricacion: "",
-  estado_vehiculo: "operativo",
-  id_compania: "",
-};
 
 export default function Dashboard() {
   const { theme } = useTheme();
   const t = themes[theme];
-  const { vehicles, user, addVehicle, selectedCompania, isAdmin, config } = useVehicles();
+  const { vehicles, user, addVehicle, companias, selectedCompania, isAdmin, config } =
+    useVehicles();
   const diasAviso = config?.preventiva?.dias_aviso ?? 30;
+  // HU03: solo Teniente Tercero en adelante registra vehículos.
+  const allowCreate = canManageVehicles(user?.nombre_rol);
 
   const [showForm, setShowForm] = useState(false);
-  const [companias, setCompanias] = useState([]);
-  const [form, setForm] = useState(FORM_INICIAL);
-  const [fieldErrors, setFieldErrors] = useState({});
-  const [formError, setFormError] = useState("");
   const [formOk, setFormOk] = useState("");
-  const [saving, setSaving] = useState(false);
 
   const now = new Date();
   const dateText =
@@ -55,86 +39,17 @@ export default function Dashboard() {
   const preventiveSoon = vehicles.filter((v) => v.preventiveStatus === "proxima").length;
   const preventiveOverdue = vehicles.filter((v) => v.preventiveStatus === "vencida").length;
 
-  // Carga las compañías para el selector (la API devuelve solo las
-  // del alcance del usuario) y preselecciona la elegida en el TopNav
-  // (administrador) o, si no hay, la del usuario autenticado.
-  useEffect(() => {
-    let mounted = true;
-    fetch("/api/companias")
-      .then((r) => r.json())
-      .then((rows) => {
-        if (!mounted) return;
-        setCompanias(rows);
-        setForm((f) => ({
-          ...f,
-          id_compania: selectedCompania
-            ? String(selectedCompania)
-            : user?.id_compania
-            ? String(user.id_compania)
-            : f.id_compania,
-        }));
-      })
-      .catch(() => {});
-    return () => {
-      mounted = false;
-    };
-  }, [user?.id_compania, selectedCompania]);
+  // Compañía preseleccionada: la elegida en el TopNav (administrador)
+  // o, si no hay, la del usuario. El selector solo ofrece las del
+  // alcance (la API devuelve solo esas).
+  const companiaInicial = String(selectedCompania || user?.id_compania || "");
 
-  const set = (key) => (e) => {
-    const value = e.target.value;
-    setForm((f) => ({ ...f, [key]: value }));
-    if (fieldErrors[key]) setFieldErrors((er) => ({ ...er, [key]: "" }));
+  const crearVehiculo = async (datos) => {
+    await addVehicle(datos);
+    setFormOk("Vehículo registrado correctamente");
+    setShowForm(false);
   };
 
-  const validate = () => {
-    const errors = {};
-    if (!form.nomenclatura.trim()) {
-      errors.nomenclatura = "La nomenclatura es obligatoria";
-    }
-    if (form.ano_fabricacion) {
-      const anio = Number(form.ano_fabricacion);
-      const actual = new Date().getFullYear();
-      if (!Number.isInteger(anio) || anio < 1900 || anio > actual + 1) {
-        errors.ano_fabricacion = `Año inválido (1900 - ${actual + 1})`;
-      }
-    }
-    if (!form.id_compania) {
-      errors.id_compania = "Selecciona una compañía";
-    }
-    return errors;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setFormError("");
-    setFormOk("");
-
-    const errors = validate();
-    setFieldErrors(errors);
-    if (Object.keys(errors).length > 0) return;
-
-    setSaving(true);
-    try {
-      await addVehicle({
-        nomenclatura: form.nomenclatura.trim(),
-        patente: form.patente.trim() || null,
-        marca: form.marca.trim() || null,
-        modelo: form.modelo.trim() || null,
-        ano_fabricacion: form.ano_fabricacion ? Number(form.ano_fabricacion) : null,
-        estado_vehiculo: form.estado_vehiculo,
-        id_compania: Number(form.id_compania),
-      });
-      setForm(FORM_INICIAL);
-      setFormOk("Vehículo registrado correctamente");
-      setShowForm(false);
-    } catch (err) {
-      setFormError(err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const errorCls = theme === "v1" ? "text-xs text-red-400" : "text-sm text-red-600";
   const okCls = theme === "v1" ? "text-xs text-emerald-400" : "text-sm text-emerald-600";
 
   return (
@@ -152,128 +67,34 @@ export default function Dashboard() {
         )}
       </div>
 
-      <button
-        onClick={() => {
-          setFormOk("");
-          setShowForm((s) => !s);
-        }}
-        className={t.smallBtn}
-      >
-        <IcPlus cls="w-4 h-4" />
-        {showForm ? "Ocultar formulario" : "Registrar vehículo"}
-      </button>
+      {allowCreate && (
+        <button
+          onClick={() => {
+            setFormOk("");
+            setShowForm((s) => !s);
+          }}
+          className={t.smallBtn}
+        >
+          <IcPlus cls="w-4 h-4" />
+          {showForm ? "Ocultar formulario" : "Registrar vehículo"}
+        </button>
+      )}
 
       {/* Fuera del formulario: al guardar, el formulario se cierra y el
           mensaje tiene que seguir visible (MTC_0070). */}
       {formOk && <p role="status" className={`${okCls} mt-3`}>{formOk}</p>}
 
       {showForm && (
-        <div className={`${t.card} p-5 mt-4`}>
-          <h2 className={t.cardTitle}>Nuevo vehículo</h2>
-          <form onSubmit={handleSubmit} noValidate className="space-y-4 mt-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className={t.label}>Nomenclatura *</label>
-                <input
-                  type="text"
-                  value={form.nomenclatura}
-                  onChange={set("nomenclatura")}
-                  placeholder="Ej: B-4, Z-1"
-                  className={`${t.input} ${fieldErrors.nomenclatura ? t.inputError : ""}`}
-                />
-                {fieldErrors.nomenclatura && <p className={`${errorCls} mt-1`}>{fieldErrors.nomenclatura}</p>}
-              </div>
-
-              <div>
-                <label className={t.label}>Patente</label>
-                <input
-                  type="text"
-                  value={form.patente}
-                  onChange={set("patente")}
-                  placeholder="Ej: KXPF-11"
-                  className={t.input}
-                />
-              </div>
-
-              <div>
-                <label className={t.label}>Marca</label>
-                <input
-                  type="text"
-                  value={form.marca}
-                  onChange={set("marca")}
-                  placeholder="Ej: Mercedes-Benz"
-                  className={t.input}
-                />
-              </div>
-
-              <div>
-                <label className={t.label}>Modelo</label>
-                <input
-                  type="text"
-                  value={form.modelo}
-                  onChange={set("modelo")}
-                  placeholder="Ej: Atego"
-                  className={t.input}
-                />
-              </div>
-
-              <div>
-                <label className={t.label}>Año de fabricación</label>
-                <input
-                  type="number"
-                  value={form.ano_fabricacion}
-                  onChange={set("ano_fabricacion")}
-                  placeholder={`Ej: ${new Date().getFullYear()}`}
-                  className={`${t.input} ${fieldErrors.ano_fabricacion ? t.inputError : ""}`}
-                />
-                {fieldErrors.ano_fabricacion && <p className={`${errorCls} mt-1`}>{fieldErrors.ano_fabricacion}</p>}
-              </div>
-
-              <div>
-                <label className={t.label}>Estado</label>
-                <select
-                  value={form.estado_vehiculo}
-                  onChange={set("estado_vehiculo")}
-                  className={t.select}
-                >
-                  {ESTADOS.map((e) => (
-                    <option key={e.value} value={e.value}>
-                      {e.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className={t.label}>Compañía *</label>
-                <select
-                  value={form.id_compania}
-                  onChange={set("id_compania")}
-                  className={`${t.select} ${fieldErrors.id_compania ? t.inputError : ""}`}
-                >
-                  <option value="">Selecciona una compañía...</option>
-                  {companias.map((c) => (
-                    <option key={c.id_compania} value={c.id_compania}>
-                      {c.nombre}
-                    </option>
-                  ))}
-                </select>
-                {fieldErrors.id_compania && <p className={`${errorCls} mt-1`}>{fieldErrors.id_compania}</p>}
-              </div>
-            </div>
-
-            {formError && <p className={errorCls}>{formError}</p>}
-
-            <div className="flex gap-3">
-              <button type="submit" disabled={saving} className={t.saveUserBtn}>
-                {saving ? "Registrando..." : "Registrar vehículo"}
-              </button>
-              <button type="button" onClick={() => setShowForm(false)} className={t.cancelBtn}>
-                Cancelar
-              </button>
-            </div>
-          </form>
-        </div>
+        <VehicleForm
+          title="Nuevo vehículo"
+          initial={{ ...VEHICULO_VACIO, id_compania: companiaInicial }}
+          companias={companias}
+          showEstado
+          submitLabel="Registrar vehículo"
+          savingLabel="Registrando..."
+          onSubmit={crearVehiculo}
+          onCancel={() => setShowForm(false)}
+        />
       )}
 
       {vehicles.length === 0 ? (
@@ -281,7 +102,7 @@ export default function Dashboard() {
           <EmptyState
             icon={<IcAlert cls="w-7 h-7" />}
             title="No hay vehículos registrados"
-            subtitle="Usa el botón 'Registrar vehículo' para agregar el primero."
+            subtitle={allowCreate ? "Usa el botón 'Registrar vehículo' para agregar el primero." : undefined}
           />
         </div>
       ) : (

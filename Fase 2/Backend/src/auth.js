@@ -125,3 +125,7 @@ export const ROLES_MANTENCION = [
   "inspector_material_mayor",
   "administrador",
 ];
+
+// Roles que pueden crear y editar vehículos (HU03/HU04). Hoy son los
+// mismos de mantención; va aparte para poder cambiar uno sin el otro.
+export const ROLES_VEHICULOS = ROLES_MANTENCION;

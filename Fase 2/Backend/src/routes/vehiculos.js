@@ -8,21 +8,94 @@
 // Alcance (src/alcance.js): cada usuario solo ve y modifica los
 // vehículos de las compañías que tiene visibles. Un vehículo fuera
 // de su alcance responde 404, como si no existiera.
+//
+// Permisos: ver, cualquier rol. Crear y editar (HU03/HU04), solo
+// ROLES_VEHICULOS (Teniente Tercero en adelante). Eliminar, solo el
+// administrador.
 
 import { Router } from "express";
 import { pool } from "../db.js";
-import { requireRol } from "../auth.js";
+import { ROLES_VEHICULOS, requireRol } from "../auth.js";
 import {
   filtroCompanias,
   puedeUsarVehiculo,
   puedeVerCompania,
 } from "../alcance.js";
 import { COLUMNAS_PREVENTIVA, JOIN_PREVENTIVA } from "../preventiva.js";
+import { hoyChile } from "../estadoVehiculo.js";
 
 const router = Router();
 
+const ESTADOS = ["operativo", "no_operativo", "en_mantencion"];
+const MAX_TEXTO = 255;
+
+// "klht-21" / "KLHT 21" / "kl.ht.21" -> "KLHT21". Así se guarda y así
+// se compara para impedir duplicados (HU03 CA5).
+const normalizarPatente = (valor) =>
+  String(valor ?? "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+
+const texto = (valor) => (typeof valor === "string" ? valor.trim() : "");
+
+// Valida el cuerpo de POST y PUT (HU03 CA2/CA4, HU04 CA3/CA6). Obligatorios:
+// nomenclatura, tipo, patente, marca, año y compañía; el modelo es
+// opcional. Devuelve { datos } normalizados o { errores } por campo.
+function validarVehiculo(body) {
+  const datos = {
+    nomenclatura: texto(body.nomenclatura),
+    tipo: texto(body.tipo),
+    patente: normalizarPatente(body.patente),
+    marca: texto(body.marca),
+    modelo: texto(body.modelo) || null,
+    ano_fabricacion: Number(body.ano_fabricacion),
+    id_compania: Number(body.id_compania),
+  };
+  const errores = {};
+  const maxAnio = Number(hoyChile().slice(0, 4)) + 1;
+
+  if (!datos.nomenclatura) errores.nomenclatura = "La nomenclatura es obligatoria";
+  if (!datos.tipo) errores.tipo = "El tipo es obligatorio";
+  if (!datos.patente) errores.patente = "La patente es obligatoria";
+  if (!datos.marca) errores.marca = "La marca es obligatoria";
+  if (
+    !Number.isInteger(datos.ano_fabricacion) ||
+    datos.ano_fabricacion < 1900 ||
+    datos.ano_fabricacion > maxAnio
+  ) {
+    errores.ano_fabricacion = `Año inválido (1900 - ${maxAnio})`;
+  }
+  if (!Number.isInteger(datos.id_compania)) errores.id_compania = "Selecciona una compañía";
+
+  for (const campo of ["nomenclatura", "tipo", "patente", "marca", "modelo"]) {
+    if (datos[campo] && datos[campo].length > MAX_TEXTO && !errores[campo]) {
+      errores[campo] = `Máximo ${MAX_TEXTO} caracteres`;
+    }
+  }
+
+  return Object.keys(errores).length ? { errores } : { datos };
+}
+
+// 400 con un mensaje legible y el detalle por campo (el front lo
+// muestra bajo cada input).
+function responderErrores(res, errores) {
+  return res.status(400).json({
+    error: Object.values(errores).join(". "),
+    campos: errores,
+  });
+}
+
+// La patente ya existe (UNIQUE uq_vehiculo_patente). Es única en todas
+// las compañías: es la del registro nacional de vehículos.
+function esPatenteDuplicada(error) {
+  return error?.code === "23505" && error.constraint === "uq_vehiculo_patente";
+}
+
+const patenteDuplicada = (patente) => ({
+  error: `Ya existe un vehículo registrado con la patente ${patente}`,
+  campos: { patente: "Esta patente ya está registrada" },
+});
+
 const SELECT_VEHICULO = `
-  SELECT v.id_vehiculo, v.nomenclatura, v.patente, v.marca, v.modelo,
+  SELECT v.id_vehiculo, v.nomenclatura, v.tipo, v.patente, v.marca, v.modelo,
          v.ano_fabricacion, v.estado_vehiculo,
          c.id_compania, c.nombre AS nombre_compania,
          ${COLUMNAS_PREVENTIVA}
@@ -68,89 +141,77 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-// ---------- POST /api/vehiculos (crear) ----------
-router.post("/", async (req, res, next) => {
+// ---------- POST /api/vehiculos (crear, HU03) ----------
+// El estado inicial se puede elegir (por defecto "operativo"); desde
+// ahí lo mantiene src/estadoVehiculo.js con cada falla o mantención.
+router.post("/", requireRol(...ROLES_VEHICULOS), async (req, res, next) => {
+  const { datos, errores } = validarVehiculo(req.body);
+  if (errores) return responderErrores(res, errores);
+
+  const estado = req.body.estado_vehiculo || "operativo";
+  if (!ESTADOS.includes(estado)) {
+    return responderErrores(res, { estado_vehiculo: "Estado inválido" });
+  }
+  if (!puedeVerCompania(req.usuario, datos.id_compania)) {
+    return res.status(403).json(OTRA_COMPANIA);
+  }
+
   try {
-    const {
-      nomenclatura,
-      patente,
-      marca,
-      modelo,
-      ano_fabricacion,
-      estado_vehiculo,
-      id_compania,
-    } = req.body;
-
-    if (!nomenclatura || !id_compania) {
-      return res.status(400).json({
-        error: 'Se requieren "nomenclatura" (texto) e "id_compania" (número)',
-      });
-    }
-    if (!puedeVerCompania(req.usuario, id_compania)) {
-      return res.status(403).json(OTRA_COMPANIA);
-    }
-
     const { rows } = await pool.query(
       `INSERT INTO vehiculo
-         (nomenclatura, patente, marca, modelo, ano_fabricacion, estado_vehiculo, id_compania)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+         (nomenclatura, tipo, patente, marca, modelo, ano_fabricacion, estado_vehiculo, id_compania)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
       [
-        nomenclatura,
-        patente || null,
-        marca || null,
-        modelo || null,
-        ano_fabricacion || null,
-        estado_vehiculo || "operativo",
-        id_compania,
+        datos.nomenclatura,
+        datos.tipo,
+        datos.patente,
+        datos.marca,
+        datos.modelo,
+        datos.ano_fabricacion,
+        estado,
+        datos.id_compania,
       ]
     );
     res.status(201).json(rows[0]);
   } catch (error) {
+    if (esPatenteDuplicada(error)) {
+      return res.status(409).json(patenteDuplicada(datos.patente));
+    }
     next(error);
   }
 });
 
-// ---------- PUT /api/vehiculos/:id (actualizar) ----------
-router.put("/:id", async (req, res, next) => {
-  try {
-    const {
-      nomenclatura,
-      patente,
-      marca,
-      modelo,
-      ano_fabricacion,
-      estado_vehiculo,
-      id_compania,
-    } = req.body;
+// ---------- PUT /api/vehiculos/:id (editar, HU04) ----------
+// El estado NO se edita: lo calcula src/estadoVehiculo.js a partir de
+// las fallas y mantenciones, y un valor puesto a mano mentiría.
+router.put("/:id", requireRol(...ROLES_VEHICULOS), async (req, res, next) => {
+  const { datos, errores } = validarVehiculo(req.body);
+  if (errores) return responderErrores(res, errores);
 
-    if (!nomenclatura || !id_compania) {
-      return res.status(400).json({
-        error: 'Se requieren "nomenclatura" (texto) e "id_compania" (número)',
-      });
-    }
+  try {
     // El vehículo actual tiene que estar en su alcance...
     if (!(await puedeUsarVehiculo(req.usuario, req.params.id))) {
       return res.status(404).json(NO_ENCONTRADO);
     }
     // ...y no puede moverlo a una compañía fuera de su alcance.
-    if (!puedeVerCompania(req.usuario, id_compania)) {
+    if (!puedeVerCompania(req.usuario, datos.id_compania)) {
       return res.status(403).json(OTRA_COMPANIA);
     }
 
     const { rows } = await pool.query(
       `UPDATE vehiculo
-       SET nomenclatura = $1, patente = $2, marca = $3, modelo = $4,
-           ano_fabricacion = $5, estado_vehiculo = $6, id_compania = $7
+       SET nomenclatura = $1, tipo = $2, patente = $3, marca = $4, modelo = $5,
+           ano_fabricacion = $6, id_compania = $7
        WHERE id_vehiculo = $8 RETURNING *`,
       [
-        nomenclatura,
-        patente || null,
-        marca || null,
-        modelo || null,
-        ano_fabricacion || null,
-        estado_vehiculo || "operativo",
-        id_compania,
+        datos.nomenclatura,
+        datos.tipo,
+        datos.patente,
+        datos.marca,
+        datos.modelo,
+        datos.ano_fabricacion,
+        datos.id_compania,
         req.params.id,
       ]
     );
@@ -159,6 +220,9 @@ router.put("/:id", async (req, res, next) => {
     }
     res.json(rows[0]);
   } catch (error) {
+    if (esPatenteDuplicada(error)) {
+      return res.status(409).json(patenteDuplicada(datos.patente));
+    }
     next(error);
   }
 });

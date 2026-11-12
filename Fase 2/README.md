@@ -179,6 +179,8 @@ docker compose -f docker-compose.yml --profile prod up -d --build   # -> http://
   | Acción | Roles |
   |---|---|
   | Reportar falla | todos |
+  | Crear y editar vehículos (HU03/HU04) | `teniente_tercero`, `inspector_material_mayor`, `administrador` |
+  | Eliminar vehículos | `administrador` |
   | Derivar falla (HU06) | `teniente_tercero`, `inspector_material_mayor`, `administrador` |
   | Registrar mantención | `teniente_tercero`, `inspector_material_mayor`, `administrador` |
   | Reportería y costos | `inspector_material_mayor`, `administrador` |

@@ -8,6 +8,7 @@
 //   Vista                     Bombero  Ten. 3  Insp. M.M.  Admin
 //   Dashboard                    x        x        x         x
 //   Detalle vehículo             x        x        x         x
+//   Crear/editar vehículo        -        x        x         x
 //   Reportar falla               x        x        x         x
 //   Registrar mantención         -        x        x         x
 //   Alertas                      x        x        x         x
@@ -46,6 +47,11 @@ export const canRegisterMaintenance = (role) =>
   ["teniente_tercero", "inspector_material_mayor", "administrador"].includes(role);
 
 export const canViewUsers = (role) => role === "administrador";
+
+// Crear y editar vehículos (HU03/HU04): misma regla que la API
+// (ROLES_VEHICULOS en Backend/src/auth.js).
+export const canManageVehicles = (role) =>
+  ["teniente_tercero", "inspector_material_mayor", "administrador"].includes(role);
 
 // Panel de fallas y derivación (HU06): misma regla que la API
 // (ROLES_MANTENCION en Backend/src/auth.js).

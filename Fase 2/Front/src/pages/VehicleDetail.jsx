@@ -3,10 +3,11 @@ import { useNavigate, useParams, Navigate } from "react-router-dom";
 import { themes } from "../themeStyles.js";
 import { useTheme } from "../theme.jsx";
 import { useVehicles } from "../store.jsx";
-import { canRegisterMaintenance } from "../permissions.js";
+import { canManageVehicles, canRegisterMaintenance } from "../permissions.js";
 import { clp, estadoPreventiva, fecha, hoyChile } from "../utils.js";
 import PageHeader from "../components/PageHeader.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
+import VehicleForm from "../components/VehicleForm.jsx";
 import { IcAlert, IcTool } from "../components/Icons.jsx";
 
 // Estado de un reporte de falla: texto y tono de la etiqueta.
@@ -21,8 +22,16 @@ export default function VehicleDetail() {
   const t = themes[theme];
   const { id } = useParams();
   const navigate = useNavigate();
-  const { vehicles, vehiclesLoaded, maintenance, user, isAdmin, finishMaintenance } =
-    useVehicles();
+  const {
+    vehicles,
+    vehiclesLoaded,
+    maintenance,
+    user,
+    isAdmin,
+    companias,
+    finishMaintenance,
+    updateVehicle,
+  } = useVehicles();
 
   const vehicle = vehicles.find((v) => v.id === id);
 
@@ -33,6 +42,18 @@ export default function VehicleDetail() {
   const [finishing, setFinishing] = useState(null);
   const [finishError, setFinishError] = useState("");
   const [savingFinish, setSavingFinish] = useState(false);
+  // Editar ficha (HU04): datos actuales del vehículo para el formulario
+  // (null = cerrado) y mensaje de éxito, que va FUERA del formulario
+  // porque este se cierra al guardar.
+  const [editing, setEditing] = useState(null);
+  const [editError, setEditError] = useState("");
+  const [editOk, setEditOk] = useState("");
+  // Al pasar a otro vehículo no se arrastra la edición del anterior.
+  useEffect(() => {
+    setEditing(null);
+    setEditError("");
+    setEditOk("");
+  }, [id]);
   // Se recarga también cuando cambian las mantenciones: al finalizar
   // una, sus reportes pasan a "resuelto".
   useEffect(() => {
@@ -52,9 +73,40 @@ export default function VehicleDetail() {
   const vehicleMaintenance = maintenance.filter((m) => m.vehicleId === vehicle.id);
 
   const allowMaintenance = canRegisterMaintenance(user?.nombre_rol);
+  const allowEdit = canManageVehicles(user?.nombre_rol);
 
   const prev = estadoPreventiva(vehicle);
   const errorCls = theme === "v1" ? "text-xs text-red-400" : "text-sm text-red-600";
+  const okCls = theme === "v1" ? "text-xs text-emerald-400" : "text-sm text-emerald-600";
+
+  // HU04 CA2: el formulario parte con los datos ACTUALES, leídos de la
+  // API (la lista en memoria muestra "—" en vez de los campos vacíos).
+  const openEdit = async () => {
+    setEditError("");
+    setEditOk("");
+    try {
+      const res = await fetch(`/api/vehiculos/${vehicle.id}`);
+      if (!res.ok) throw new Error();
+      const v = await res.json();
+      setEditing({
+        nomenclatura: v.nomenclatura ?? "",
+        tipo: v.tipo ?? "",
+        patente: v.patente ?? "",
+        marca: v.marca ?? "",
+        modelo: v.modelo ?? "",
+        ano_fabricacion: v.ano_fabricacion ? String(v.ano_fabricacion) : "",
+        id_compania: String(v.id_compania),
+      });
+    } catch {
+      setEditError("No se pudieron cargar los datos del vehículo");
+    }
+  };
+
+  const saveEdit = async (datos) => {
+    await updateVehicle(vehicle.id, datos);
+    setEditing(null);
+    setEditOk("Vehículo actualizado correctamente");
+  };
 
   const confirmFinish = async () => {
     setFinishError("");
@@ -70,6 +122,7 @@ export default function VehicleDetail() {
   };
 
   const infoFields = [
+    ["Tipo", vehicle.kind],
     ["Año", vehicle.year.toString()],
     ["Patente", vehicle.plate],
     ["Última preventiva", vehicle.lastMaintenance],
@@ -97,9 +150,18 @@ export default function VehicleDetail() {
                 </span>
               )}
             </div>
-            <StatusBadge status={vehicle.status} large />
+            <div className="flex flex-col items-end gap-2">
+              <StatusBadge status={vehicle.status} large />
+              {allowEdit && !editing && (
+                <button onClick={openEdit} className={t.secondaryBtn}>
+                  Editar
+                </button>
+              )}
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+          {editError && <p className={`${errorCls} mb-3`}>{editError}</p>}
+          {editOk && <p role="status" className={`${okCls} mb-3`}>{editOk}</p>}
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-5">
             {infoFields.map(([l, v]) => (
               <div key={l} className={t.infoTile}>
                 <p className={t.infoTileLabel}>{l}</p>
@@ -112,6 +174,18 @@ export default function VehicleDetail() {
             <p className={`${t.alertSub(prev.nivel)} mt-3`}>{prev.texto}</p>
           )}
         </div>
+
+        {editing && (
+          <VehicleForm
+            title="Editar vehículo"
+            initial={editing}
+            companias={companias}
+            submitLabel="Guardar cambios"
+            savingLabel="Guardando..."
+            onSubmit={saveEdit}
+            onCancel={() => setEditing(null)}
+          />
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <button
