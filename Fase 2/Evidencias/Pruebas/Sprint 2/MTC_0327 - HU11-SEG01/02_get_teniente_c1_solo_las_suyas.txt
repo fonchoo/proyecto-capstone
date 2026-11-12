@@ -1,0 +1,27 @@
+Fecha de ejecución: 12-11-2026, 8:59:15 a. m.
+Usuario: teniente.c1@sigmave.cl
+Solicitud: GET /api/notificaciones
+Respuesta: HTTP 200
+{
+  "no_leidas": 2,
+  "notificaciones": [
+    {
+      "id_notificacion": 3,
+      "tipo": "falla_reportada",
+      "mensaje": "Nueva falla en R-1 (urgencia baja): Espejo lateral suelto",
+      "id_vehiculo": 2,
+      "id_reporte_falla": 2,
+      "creada_en": "2026-11-12T11:57:37.045Z",
+      "leida_en": null
+    },
+    {
+      "id_notificacion": 1,
+      "tipo": "falla_reportada",
+      "mensaje": "Nueva falla en B-1 (urgencia alta): Pérdida de presión en la bomba principal",
+      "id_vehiculo": 1,
+      "id_reporte_falla": 1,
+      "creada_en": "2026-11-12T11:56:54.743Z",
+      "leida_en": null
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+Fecha de ejecución: 12-11-2026 08:59
+Consulta: notificaciones por usuario (todas las compañías)
+
+          email          |     compania     |        nombre_rol        |      tipo       |                                   mensaje                                    
+-------------------------+------------------+--------------------------+-----------------+------------------------------------------------------------------------------
+ teniente.c1@sigmave.cl  | Primera Compañía | teniente_tercero         | falla_reportada | Nueva falla en B-1 (urgencia alta): Pérdida de presión en la bomba principal
+ inspector.c1@sigmave.cl | Primera Compañía | inspector_material_mayor | falla_reportada | Nueva falla en B-1 (urgencia alta): Pérdida de presión en la bomba principal
+ teniente.c1@sigmave.cl  | Primera Compañía | teniente_tercero         | falla_reportada | Nueva falla en R-1 (urgencia baja): Espejo lateral suelto
+ inspector.c1@sigmave.cl | Primera Compañía | inspector_material_mayor | falla_reportada | Nueva falla en R-1 (urgencia baja): Espejo lateral suelto
+(4 rows)
+
+          email          | notificaciones 
+-------------------------+----------------
+ admin@admin.cl          |              0
+ administrador@gmail.com |              0
+ bombero.c1@sigmave.cl   |              0
+ bombero.c2@sigmave.cl   |              0
+ inspector.c1@sigmave.cl |              2
+ inspector.c2@sigmave.cl |              0
+ teniente.c1@sigmave.cl  |              2
+ teniente.c2@sigmave.cl  |              0
+(8 rows)
+

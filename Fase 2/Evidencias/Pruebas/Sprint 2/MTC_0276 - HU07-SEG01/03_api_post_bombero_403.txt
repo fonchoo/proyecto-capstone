@@ -1,0 +1,23 @@
+MTC_0276 - HU07-SEG01: Validar que un bombero no pueda registrar mantenciones
+Fecha de ejecución: 12-11-2026 09:10
+Usuario: bombero.c1@sigmave.cl (rol bombero, Primera Compañía)
+
+1) Ficha de B-1 con la sesión de bombero.c1:
+   No aparece el botón «Registrar Mantención» (ver 01_bombero_c1_ficha_B-1_sin_registrar_mantencion.jpg)
+
+2) Navegador: http://localhost:5173/vehiculos/1/registrar-mantencion
+   -> Redirige a /dashboard (ver 02_url_registrar_mantencion_redirige_a_dashboard.jpg)
+
+3) Petición a la API con la cookie de sesión de bombero.c1:
+Usuario: bombero.c1@sigmave.cl
+Solicitud: POST /api/mantenimientos
+Cuerpo: {"id_vehiculo":1,"id_tipo_mantencion":1,"fecha_ingreso":"2026-11-10","proveedor":"Taller X","detalle_trabajo":"Prueba"}
+Respuesta: HTTP 403
+{
+  "error": "No tienes permisos para esta acción"
+}
+
+4) Verificación en la base de datos (psql, supabase_db_sigmave):
+   select count(*) from mantencion
+   -> antes: 3 | después: 3
+   No se registró ninguna mantención.

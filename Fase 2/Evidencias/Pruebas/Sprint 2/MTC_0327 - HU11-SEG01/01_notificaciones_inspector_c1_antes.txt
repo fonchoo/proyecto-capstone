@@ -1,0 +1,8 @@
+Fecha de ejecución: 12-11-2026 08:59
+Paso 1: notificaciones de inspector.c1 (id_usuario 5) antes de la prueba
+ id_notificacion | id_usuario |           leida_en            |                                   mensaje                                    
+-----------------+------------+-------------------------------+------------------------------------------------------------------------------
+               2 |          5 | 2026-11-12 11:58:25.009748+00 | Nueva falla en B-1 (urgencia alta): Pérdida de presión en la bomba principal
+               4 |          5 |                               | Nueva falla en R-1 (urgencia baja): Espejo lateral suelto
+(2 rows)
+

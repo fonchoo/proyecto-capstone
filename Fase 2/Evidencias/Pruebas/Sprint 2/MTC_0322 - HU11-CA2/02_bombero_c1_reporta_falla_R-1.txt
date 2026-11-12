@@ -1,0 +1,24 @@
+Fecha de ejecución: 12-11-2026, 8:57:37 a. m.
+Usuario: bombero.c1@sigmave.cl
+Solicitud: POST /api/fallas
+Cuerpo: {"id_vehiculo":2,"urgencia":"baja","descripcion":"Espejo lateral suelto"}
+Respuesta: HTTP 201
+{
+  "id_reporte_falla": 2,
+  "fecha_reporte": "2026-11-12T11:57:37.045Z",
+  "urgencia": "baja",
+  "descripcion": "Espejo lateral suelto",
+  "estado_reporte": "pendiente",
+  "fecha_derivacion": null,
+  "id_mantencion": null,
+  "id_vehiculo": 2,
+  "nomenclatura": "R-1",
+  "patente": "JXPS48",
+  "marca": "Renault",
+  "modelo": "Midlum 300",
+  "id_compania": 1,
+  "nombre_compania": "Primera Compañía",
+  "id_usuario": 3,
+  "usuario_nombre": "Bombero Primera",
+  "derivado_por": null
+}

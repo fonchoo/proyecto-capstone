@@ -1,0 +1,7 @@
+Fecha de ejecución: 12-11-2026, 8:59:15 a. m.
+Usuario: teniente.c1@sigmave.cl
+Solicitud: PATCH /api/notificaciones/4/leer
+Respuesta: HTTP 404
+{
+  "error": "Notificación no encontrada"
+}

@@ -1,0 +1,9 @@
+Fecha de ejecución: 12-11-2026 09:02
+Paso 1: datos después de npx supabase db reset + datos_alertas_preventiva.sql
+ nomenclatura |     compania     | ultima_preventiva |   vence    | dias_restantes 
+--------------+------------------+-------------------+------------+----------------
+ B-1          | Primera Compañía | 2026-06-02        | 2026-12-02 |             20
+ B-2          | Segunda Compañía | 2026-05-07        | 2026-11-07 |             -5
+ R-1          | Primera Compañía | 2026-05-02        | 2026-11-02 |            -10
+(3 rows)
+

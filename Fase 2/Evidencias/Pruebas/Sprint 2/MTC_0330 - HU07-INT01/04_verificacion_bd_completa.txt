@@ -1,0 +1,31 @@
+MTC_0330 - HU07-INT01: Integrar mantención, reportes de falla y estado del vehículo
+Fecha de ejecución: 12-11-2026 09:12
+Base: Supabase local (psql, supabase_db_sigmave), después de MTC_0262, MTC_0272 y MTC_0270 sobre B-1 (id 1).
+
+1) Mantenciones de B-1:
+ id_mantencion |    tipo    | fecha_ingreso | fecha_salida | estado_mantencion | costo_total | mano_obra |      proveedor      
+---------------+------------+---------------+--------------+-------------------+-------------+-----------+---------------------
+             1 | preventiva | 2026-09-10    | 2026-09-12   | finalizada        |   420000.00 | 120000.00 | Taller Maipú Diesel
+             4 | preventiva | 2026-11-10    | 2026-11-11   | finalizada        |   350000.00 | 120000.00 | Taller Maipú Diesel
+             5 | reactiva   | 2026-11-12    | 2026-11-12   | finalizada        |   180000.00 |      0.00 | Taller Maipú Diesel
+             6 | reactiva   | 2026-11-12    | 2026-11-12   | finalizada        |    35000.00 |  20000.00 | Taller Maipú Diesel
+(4 rows)
+
+2) Reportes de falla de B-1 y la mantención que los resolvió:
+ id_reporte_falla | urgencia | estado_reporte | id_mantencion | estado_mantencion | fecha_salida 
+------------------+----------+----------------+---------------+-------------------+--------------
+                1 | alta     | resuelto       |             5 | finalizada        | 2026-11-12
+                2 | media    | resuelto       |             6 | finalizada        | 2026-11-12
+(2 rows)
+
+3) Estado del vehículo:
+ id_vehiculo | nomenclatura | estado_vehiculo 
+-------------+--------------+-----------------
+           1 | B-1          | operativo
+(1 row)
+
+Resultado:
+   - Las mantenciones reactivas (ids 5 y 6) quedaron 'finalizada', con costo_total y mano_obra registrados.
+   - El reporte N° 1 quedó 'resuelto' y enlazado a la mantención 5; el N° 2, 'resuelto' y enlazado a la 6.
+   - B-1 quedó 'operativo': no le quedan mantenciones en proceso ni fallas pendientes o derivadas.
+   - Coincide con la ficha de B-1 (ver capturas de MTC_0270 y MTC_0272).

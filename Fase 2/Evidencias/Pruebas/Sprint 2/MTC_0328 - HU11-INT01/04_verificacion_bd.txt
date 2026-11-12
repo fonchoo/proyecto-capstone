@@ -1,0 +1,12 @@
+Fecha de ejecución: 12-11-2026 08:59
+Paso 3: avisos de tipo falla_derivada y estado del reporte N° 1
+ id_notificacion |          email          |      tipo      | id_reporte_falla |                                               mensaje                                                
+-----------------+-------------------------+----------------+------------------+------------------------------------------------------------------------------------------------------
+               5 | inspector.c1@sigmave.cl | falla_derivada |                1 | Falla N° 1 de B-1 derivada para mantención (urgencia alta): Pérdida de presión en la bomba principal
+(1 row)
+
+ id_reporte_falla | estado_reporte |       fecha_derivacion       |      derivado_por      
+------------------+----------------+------------------------------+------------------------
+                1 | derivado       | 2026-11-12 11:59:35.32434+00 | teniente.c1@sigmave.cl
+(1 row)
+

@@ -1,0 +1,7 @@
+Fecha de ejecución: 12-11-2026 08:59
+Paso 3: la notificación 4 de inspector.c1 sigue sin leer (leida_en vacío)
+ id_notificacion | id_usuario | leida_en |                          mensaje                          
+-----------------+------------+----------+-----------------------------------------------------------
+               4 |          5 |          | Nueva falla en R-1 (urgencia baja): Espejo lateral suelto
+(1 row)
+

@@ -1,0 +1,25 @@
+Fecha de ejecución: 12-11-2026 09:07
+Trazabilidad del flujo en B-2 (id_vehiculo 3)
+ id_reporte_falla | urgencia | estado_reporte |     reportado_por     |      derivado_por      |       fecha_derivacion        | id_mantencion 
+------------------+----------+----------------+-----------------------+------------------------+-------------------------------+---------------
+                1 | media    | resuelto       | bombero.c2@sigmave.cl | teniente.c2@sigmave.cl | 2026-11-12 12:07:03.603962+00 |             4
+(1 row)
+
+ id_mantencion | estado_mantencion | fecha_ingreso | fecha_salida | costo_total | mano_obra |  proveedor  
+---------------+-------------------+---------------+--------------+-------------+-----------+-------------
+             3 | finalizada        | 2026-09-20    | 2026-09-21   |   380000.00 |  90000.00 | Iveco Chile
+             4 | finalizada        | 2026-11-12    | 2026-11-12   |   150000.00 |  60000.00 | Iveco Chile
+(2 rows)
+
+ nomenclatura | estado_vehiculo 
+--------------+-----------------
+ B-2          | operativo
+(1 row)
+
+          email          |      tipo       |                                              mensaje                                              
+-------------------------+-----------------+---------------------------------------------------------------------------------------------------
+ teniente.c2@sigmave.cl  | falla_reportada | Nueva falla en B-2 (urgencia media): Fuga de aceite en la caja de cambios
+ inspector.c2@sigmave.cl | falla_reportada | Nueva falla en B-2 (urgencia media): Fuga de aceite en la caja de cambios
+ inspector.c2@sigmave.cl | falla_derivada  | Falla N° 1 de B-2 derivada para mantención (urgencia media): Fuga de aceite en la caja de cambios
+(3 rows)
+
