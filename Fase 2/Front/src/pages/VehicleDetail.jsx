@@ -17,6 +17,9 @@ const ESTADO_FALLA = {
   resuelto: ["Resuelto", "ok"],
 };
 
+// Monto del historial: null = todavía no se ingresa (no es $0).
+const montoHist = (valor) => (valor === null ? "pendiente" : clp(valor));
+
 export default function VehicleDetail() {
   const { theme } = useTheme();
   const t = themes[theme];
@@ -273,11 +276,20 @@ export default function VehicleDetail() {
                         {m.status === "en_proceso" ? "En proceso" : "Finalizada"}
                       </span>
                     </div>
-                    <span className={t.histCost}>{clp(m.cost)}</span>
+                    {/* Una mantención en curso puede no tener costos aún
+                        (son obligatorios recién al finalizar): no se
+                        muestra $0, que se leería como gratis. */}
+                    {m.costsPending ? (
+                      <span className={t.histCostPending}>Costos pendientes</span>
+                    ) : (
+                      <span className={t.histCost}>{clp(m.cost)}</span>
+                    )}
                   </div>
                   <p className={t.histDesc}>{m.description}</p>
                   <p className={t.histFooter}>
-                    {m.workshop} · Repuestos {clp(m.parts)} · M.O. {clp(m.labor)}
+                    {m.workshop}
+                    {!m.costsPending &&
+                      ` · Repuestos ${montoHist(m.partsRegistered)} · M.O. ${montoHist(m.laborRegistered)}`}
                     {m.linkedReports > 0 &&
                       ` · Resuelve ${m.linkedReports} falla${m.linkedReports !== 1 ? "s" : ""}`}
                   </p>

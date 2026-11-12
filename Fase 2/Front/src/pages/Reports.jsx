@@ -209,7 +209,7 @@ export default function Reports() {
       doc.text(m.vehicleId ? (vehicles.find((v) => v.id === m.vehicleId)?.code || m.vehicleId) : "", 40, yy);
       doc.text(m.type || "", 70, yy);
       doc.text((m.workshop || "").slice(0, 30), 100, yy);
-      doc.text(`$${m.cost.toLocaleString("es-CL")}`, 170, yy);
+      doc.text(m.costsPending ? "Pendiente" : `$${m.cost.toLocaleString("es-CL")}`, 170, yy);
       yy += 6;
     });
 

@@ -62,6 +62,9 @@ const mapMaintenance = (m) => ({
   // distinto de $0). Al finalizar son obligatorios.
   partsRegistered: m.costo_total === null ? null : Number(m.costo_repuestos),
   laborRegistered: m.mano_obra === null ? null : Number(m.mano_obra),
+  // Sin ningún monto ingresado (la API deja costo_total en null): se
+  // muestra «Costos pendientes» en vez de un $0 que parece real.
+  costsPending: m.costo_total === null,
   description: m.detalle_trabajo || "",
   workshop: m.proveedor || "—",
   // Ciclo (HU07): "en_proceso" sin fecha de salida, "finalizada" con ella.

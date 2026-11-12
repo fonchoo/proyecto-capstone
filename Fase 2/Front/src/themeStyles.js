@@ -72,6 +72,7 @@ export const themes = {
     urgChip: (urgency) =>
       `text-xs px-2 py-0.5 rounded-full font-medium capitalize ${urgency === "alta" ? "bg-red-500/10 text-red-400" : urgency === "media" ? "bg-amber-500/10 text-amber-400" : "bg-blue-500/10 text-blue-400"}`,
     histCost: "font-mono text-sm font-bold text-white",
+    histCostPending: "font-mono text-xs font-medium text-amber-400",
     histDesc: "text-sm text-gray-400 leading-relaxed",
     histFooter: "text-xs text-gray-700 mt-2 font-mono",
     label: "block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2",
@@ -240,6 +241,7 @@ export const themes = {
     urgChip: (urgency) =>
       `text-xs px-2 py-0.5 rounded-full font-medium capitalize ${urgency === "alta" ? "bg-red-50 text-red-700" : urgency === "media" ? "bg-amber-50 text-amber-700" : "bg-blue-50 text-blue-700"}`,
     histCost: "text-sm font-bold text-gray-900",
+    histCostPending: "text-xs font-medium text-amber-600",
     histDesc: "text-sm text-gray-600 leading-relaxed",
     histFooter: "text-xs text-gray-400 mt-1.5",
     label: "text-xs font-medium text-gray-500 mb-2",
