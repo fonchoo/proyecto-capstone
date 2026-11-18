@@ -185,8 +185,10 @@ pública se usan dos proyectos de Vercel y un proyecto de Supabase en la nube
   viajaría entre dominios distintos. Además devuelve `index.html` en cualquier
   otra ruta, para que recargar en `/vehiculos/1` no dé 404. Si la API queda
   publicada con otra URL, hay que cambiarla ahí.
-- **`Backend/vercel.json`** instala sin dependencias de desarrollo: Vercel no
-  necesita nodemon ni la CLI de Supabase.
+- **`Backend/vercel.json`** instala sin dependencias de desarrollo (Vercel no
+  necesita nodemon ni la CLI de Supabase) y corre la función en São Paulo
+  (`gru1`), la misma región que la base: por defecto Vercel usa Washington
+  (`iad1`) y cada consulta cruzaría el continente.
 - **Variables de la API en Vercel:** las mismas `PG*` del `.env`, apuntando al
   *pooler* de Supabase (modo transacción, puerto 6543), más:
 
