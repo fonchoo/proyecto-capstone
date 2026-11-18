@@ -177,7 +177,7 @@ pública se usan dos proyectos de Vercel y un proyecto de Supabase en la nube
 
 | Proyecto | Raíz en Vercel | Qué publica |
 |---|---|---|
-| `sigmave-api` | `Fase 2/Backend` | La API Express como función serverless |
+| `proyecto-capstone-backend` | `Fase 2/Backend` | La API Express como función serverless, en https://proyecto-capstone-backend.vercel.app (se publica con la CLI) |
 | `sigmave-web` | `Fase 2/Front` | El frontend compilado con Vite |
 
 - **`Front/vercel.json`** reenvía `/api/*` al proyecto de la API, así el

@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://sigmave-api.vercel.app/api/:path*"
+      "destination": "https://proyecto-capstone-backend.vercel.app/api/:path*"
     },
     {
       "source": "/(.*)",
