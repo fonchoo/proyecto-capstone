@@ -5,7 +5,6 @@ import { useTheme } from "../theme.jsx";
 import { useVehicles } from "../store.jsx";
 import PageHeader from "../components/PageHeader.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
-import { IcCamera, IcCheck } from "../components/Icons.jsx";
 
 export default function ReportFault() {
   const { theme } = useTheme();
@@ -17,7 +16,6 @@ export default function ReportFault() {
   const vehicle = vehicles.find((v) => v.id === id);
   const [urgency, setUrgency] = useState("alta");
   const [description, setDescription] = useState("");
-  const [hasPhoto, setHasPhoto] = useState(false);
   const [descError, setDescError] = useState("");
   const [formError, setFormError] = useState("");
   const [sending, setSending] = useState(false);
@@ -100,13 +98,10 @@ export default function ReportFault() {
           {descError && <p className={`${errorCls} mt-1`}>{descError}</p>}
         </div>
 
-        <button onClick={() => setHasPhoto(!hasPhoto)} className={t.photoBtn(hasPhoto)}>
-          <IcCamera cls={`w-4 h-4 shrink-0 ${t.photoIcon}`} />
-          <span className="flex-1 text-left">
-            {hasPhoto ? "1 foto adjunta" : "Adjuntar foto (opcional)"}
-          </span>
-          {hasPhoto && <IcCheck cls={t.checkIcon} />}
-        </button>
+        {/* Adjuntar foto: oculto hasta implementarlo. El botón venía del
+            prototipo y solo marcaba «1 foto adjunta» sin elegir ni enviar
+            ningún archivo (no hay columna, bucket de Storage ni ruta en la
+            API). Los estilos photoBtn/photoIcon quedan en themeStyles.js. */}
 
         {formError && <p className={errorCls}>{formError}</p>}
 
