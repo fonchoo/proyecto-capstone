@@ -23,6 +23,11 @@
 //     ($0 vale). La reportería de costos (HU13) depende de ellos; al
 //     ingresar todavía no se conocen, por eso ahí son opcionales.
 //
+// Formato (src/validaciones.js): ingreso ni futuro ni anterior al año
+// de fabricación del vehículo; kilometraje entero de 0 a 2.000.000;
+// montos en pesos enteros de $0 a $100.000.000; taller de 3 a 100
+// caracteres; detalle de 10 a 2000.
+//
 // Ciclo de la mantención (HU07):
 //   - Sin fecha de salida -> "en_proceso"; con fecha de salida ->
 //     "finalizada". El estado NO se recibe del body: se deriva.
@@ -47,6 +52,17 @@ import {
   recalcularEstadoVehiculo,
   responderErrorPublico,
 } from "../estadoVehiculo.js";
+import {
+  DETALLE,
+  KM_MAX,
+  MONTO_MAX,
+  TALLER,
+  enteroEnRango,
+  errorLargo,
+  texto,
+  textoLargo,
+  vacio,
+} from "../validaciones.js";
 
 const router = Router();
 
@@ -81,9 +97,13 @@ function calcularCostos(body) {
       montos[campo] = null;
       continue;
     }
-    const n = Number(valor);
-    if (!Number.isFinite(n) || n < 0) {
-      return { campo, error: "Debe ser un monto mayor o igual a 0" };
+    // Pesos chilenos: enteros, sin centavos (src/validaciones.js).
+    const n = enteroEnRango(valor, 0, MONTO_MAX);
+    if (n === null) {
+      return {
+        campo,
+        error: "Debe ser un monto en pesos, sin decimales, entre $0 y $100.000.000",
+      };
     }
     montos[campo] = n;
   }
@@ -125,9 +145,6 @@ const COSTO_OBLIGATORIO = {
   mano_obra: "La mano de obra es obligatoria al finalizar (puede ser $0)",
 };
 
-const texto = (valor) => (typeof valor === "string" ? valor.trim() : "");
-const vacio = (valor) => valor === undefined || valor === null || valor === "";
-
 // Valida el cuerpo de POST y PUT. Devuelve { datos } normalizados o
 // { errores } por campo (el front los muestra bajo cada input).
 async function validarMantencion(body) {
@@ -135,7 +152,7 @@ async function validarMantencion(body) {
   const datos = {
     fecha_ingreso: body.fecha_ingreso,
     fecha_salida: vacio(body.fecha_salida) ? null : body.fecha_salida,
-    detalle_trabajo: texto(body.detalle_trabajo),
+    detalle_trabajo: textoLargo(body.detalle_trabajo),
     proveedor: texto(body.proveedor),
     id_vehiculo: Number(body.id_vehiculo),
     id_tipo_mantencion: Number(body.id_tipo_mantencion),
@@ -159,16 +176,36 @@ async function validarMantencion(body) {
     const errorFechas = validarFechas(datos.fecha_ingreso, datos.fecha_salida);
     if (errorFechas) {
       errores[errorFechas.includes("salida") ? "fecha_salida" : "fecha_ingreso"] = errorFechas;
+    } else if (datos.fecha_ingreso > hoyChile()) {
+      // Un ingreso futuro dejaría el vehículo "En mantención" desde hoy
+      // (src/estadoVehiculo.js) sin que haya entrado al taller.
+      errores.fecha_ingreso = "La fecha de ingreso no puede ser futura";
+    } else if (Number.isInteger(datos.id_vehiculo)) {
+      // Ni anterior al año de fabricación del vehículo.
+      const { rows } = await pool.query(
+        "SELECT ano_fabricacion FROM vehiculo WHERE id_vehiculo = $1",
+        [datos.id_vehiculo]
+      );
+      const anio = rows[0]?.ano_fabricacion;
+      if (anio && datos.fecha_ingreso < `${anio}-01-01`) {
+        errores.fecha_ingreso = `La fecha de ingreso no puede ser anterior al año de fabricación del vehículo (${anio})`;
+      }
     }
   }
 
   if (!datos.proveedor) errores.proveedor = "El taller es obligatorio";
+  else if (errorLargo(datos.proveedor, TALLER.min, TALLER.max)) {
+    errores.proveedor = errorLargo(datos.proveedor, TALLER.min, TALLER.max);
+  }
   if (!datos.detalle_trabajo) errores.detalle_trabajo = "El detalle del trabajo es obligatorio";
+  else if (errorLargo(datos.detalle_trabajo, DETALLE.min, DETALLE.max)) {
+    errores.detalle_trabajo = errorLargo(datos.detalle_trabajo, DETALLE.min, DETALLE.max);
+  }
 
   if (!vacio(body.kilometraje_ingreso)) {
-    const km = Number(body.kilometraje_ingreso);
-    if (!Number.isInteger(km) || km < 0) {
-      errores.kilometraje_ingreso = "El kilometraje debe ser un número entero mayor o igual a 0";
+    const km = enteroEnRango(body.kilometraje_ingreso, 0, KM_MAX);
+    if (km === null) {
+      errores.kilometraje_ingreso = "El kilometraje debe ser un número entero entre 0 y 2.000.000";
     } else {
       datos.kilometraje_ingreso = km;
     }

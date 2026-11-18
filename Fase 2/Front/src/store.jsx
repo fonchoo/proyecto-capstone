@@ -67,6 +67,7 @@ const mapMaintenance = (m) => ({
   costsPending: m.costo_total === null,
   description: m.detalle_trabajo || "",
   workshop: m.proveedor || "—",
+  km: m.kilometraje_ingreso, // null si no se registró
   // Ciclo (HU07): "en_proceso" sin fecha de salida, "finalizada" con ella.
   status: m.estado_mantencion,
   exitDate: m.fecha_salida,

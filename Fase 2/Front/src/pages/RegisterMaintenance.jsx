@@ -5,6 +5,7 @@ import { useTheme } from "../theme.jsx";
 import { useVehicles } from "../store.jsx";
 import PageHeader from "../components/PageHeader.jsx";
 import { clp, fecha, hoyChile, sumarMeses } from "../utils.js";
+import { DETALLE, KM_MAX, TALLER, enteroEnRango, errorLargo, errorMonto, texto } from "../validaciones.js";
 
 const FORM_INICIAL = {
   fecha_ingreso: "",
@@ -21,7 +22,7 @@ export default function RegisterMaintenance() {
   const t = themes[theme];
   const { id } = useParams();
   const navigate = useNavigate();
-  const { vehicles, vehiclesLoaded, user, addMaintenance, config } = useVehicles();
+  const { vehicles, vehiclesLoaded, user, addMaintenance, config, maintenance } = useVehicles();
 
   const vehicle = vehicles.find((v) => v.id === id);
 
@@ -98,6 +99,18 @@ export default function RegisterMaintenance() {
     ? "La falla quedará resuelta y el vehículo volverá a \"Operativo\" si no tiene otras fallas ni mantenciones abiertas."
     : "La mantención quedará finalizada.";
 
+  // Advertencia (no bloquea): un kilometraje menor que el último
+  // registrado del vehículo suele ser un error de tipeo, pero puede ser
+  // real (cambio de odómetro), así que solo se avisa.
+  const ultimoKm = Math.max(
+    -1,
+    ...maintenance.filter((m) => m.vehicleId === vehicle.id && m.km !== null).map((m) => m.km)
+  );
+  const avisoKm =
+    form.kilometraje_ingreso !== "" && ultimoKm >= 0 && Number(form.kilometraje_ingreso) < ultimoKm
+      ? `Es menor que el último kilometraje registrado (${ultimoKm.toLocaleString("es-CL")} km). Revisa que esté bien.`
+      : "";
+
   // Vista previa del total (la API hace el mismo cálculo al guardar).
   const costoTotal =
     (Number(form.costo_repuestos) || 0) + (Number(form.mano_obra) || 0);
@@ -108,10 +121,16 @@ export default function RegisterMaintenance() {
     if (fieldErrors[key]) setFieldErrors((er) => ({ ...er, [key]: "" }));
   };
 
+  // Mismas reglas que la API (validarMantencion en
+  // Backend/src/routes/mantenimientos.js).
   const validate = () => {
     const errors = {};
     if (!form.fecha_ingreso) {
       errors.fecha_ingreso = "La fecha es obligatoria";
+    } else if (form.fecha_ingreso > hoyChile()) {
+      errors.fecha_ingreso = "La fecha de ingreso no puede ser futura";
+    } else if (Number(vehicle.year) && form.fecha_ingreso < `${vehicle.year}-01-01`) {
+      errors.fecha_ingreso = `La fecha de ingreso no puede ser anterior al año de fabricación del vehículo (${vehicle.year})`;
     }
     if (form.fecha_salida && form.fecha_salida > hoyChile()) {
       errors.fecha_salida = "La fecha de salida no puede ser futura";
@@ -119,20 +138,24 @@ export default function RegisterMaintenance() {
     if (form.fecha_salida && form.fecha_ingreso && form.fecha_salida < form.fecha_ingreso) {
       errors.fecha_salida = "La fecha de salida no puede ser anterior al ingreso";
     }
-    if (form.kilometraje_ingreso && Number(form.kilometraje_ingreso) < 0) {
-      errors.kilometraje_ingreso = "El kilometraje no puede ser negativo";
+    if (form.kilometraje_ingreso !== "" && enteroEnRango(form.kilometraje_ingreso, 0, KM_MAX) === null) {
+      errors.kilometraje_ingreso = "El kilometraje debe ser un número entero entre 0 y 2.000.000";
     }
-    if (form.costo_repuestos && Number(form.costo_repuestos) < 0) {
-      errors.costo_repuestos = "El costo no puede ser negativo";
+    for (const campo of ["costo_repuestos", "mano_obra"]) {
+      const error = errorMonto(form[campo]);
+      if (error) errors[campo] = error;
     }
-    if (form.mano_obra && Number(form.mano_obra) < 0) {
-      errors.mano_obra = "El costo no puede ser negativo";
+    // Obligatorios: taller y detalle siempre; los costos solo si ya
+    // tiene salida.
+    const taller = texto(form.proveedor);
+    if (!taller) errors.proveedor = "El taller es obligatorio";
+    else if (errorLargo(taller, TALLER.min, TALLER.max)) {
+      errors.proveedor = errorLargo(taller, TALLER.min, TALLER.max);
     }
-    // Obligatorios (mismas reglas que la API, ver mantenimientos.js):
-    // taller y detalle siempre; los costos solo si ya tiene salida.
-    if (!form.proveedor.trim()) errors.proveedor = "El taller es obligatorio";
-    if (!form.detalle_trabajo.trim()) {
-      errors.detalle_trabajo = "El detalle del trabajo es obligatorio";
+    const detalle = form.detalle_trabajo.trim();
+    if (!detalle) errors.detalle_trabajo = "El detalle del trabajo es obligatorio";
+    else if (errorLargo(detalle, DETALLE.min, DETALLE.max)) {
+      errors.detalle_trabajo = errorLargo(detalle, DETALLE.min, DETALLE.max);
     }
     if (form.fecha_salida) {
       for (const campo of ["costo_repuestos", "mano_obra"]) {
@@ -166,7 +189,7 @@ export default function RegisterMaintenance() {
         fecha_salida: form.fecha_salida || null,
         kilometraje_ingreso: form.kilometraje_ingreso ? Number(form.kilometraje_ingreso) : null,
         detalle_trabajo: form.detalle_trabajo.trim() || null,
-        proveedor: form.proveedor.trim() || null,
+        proveedor: texto(form.proveedor) || null,
         // El costo total lo calcula la API (repuestos + mano de obra).
         costo_repuestos: form.costo_repuestos !== "" ? Number(form.costo_repuestos) : null,
         mano_obra: form.mano_obra !== "" ? Number(form.mano_obra) : null,
@@ -250,6 +273,7 @@ export default function RegisterMaintenance() {
               <input
                 type="date"
                 value={form.fecha_ingreso}
+                max={hoyChile()}
                 onChange={set("fecha_ingreso")}
                 className={`${t.input} ${fieldErrors.fecha_ingreso ? t.inputError : ""}`}
               />
@@ -287,11 +311,16 @@ export default function RegisterMaintenance() {
               type="number"
               value={form.kilometraje_ingreso}
               onChange={set("kilometraje_ingreso")}
+              min="0"
+              max={KM_MAX}
+              step="1"
               placeholder="Ej: 58000"
               className={`${t.input} ${fieldErrors.kilometraje_ingreso ? t.inputError : ""}`}
             />
-            {fieldErrors.kilometraje_ingreso && (
+            {fieldErrors.kilometraje_ingreso ? (
               <p className={`${errorCls} mt-1`}>{fieldErrors.kilometraje_ingreso}</p>
+            ) : (
+              avisoKm && <p className={`${t.note} mt-1`} role="status">{avisoKm}</p>
             )}
           </div>
 
@@ -302,6 +331,7 @@ export default function RegisterMaintenance() {
               value={form.detalle_trabajo}
               onChange={set("detalle_trabajo")}
               placeholder="Ej: Cambio de aceite 15W-40, filtro de aceite, revisión de frenos"
+              maxLength={DETALLE.max}
               className={`${t.textarea} ${fieldErrors.detalle_trabajo ? t.inputError : ""}`}
             />
             {fieldErrors.detalle_trabajo && (
@@ -315,6 +345,7 @@ export default function RegisterMaintenance() {
               <input
                 type="number"
                 min="0"
+                step="1"
                 step="1"
                 value={form.costo_repuestos}
                 onChange={set("costo_repuestos")}
@@ -330,6 +361,7 @@ export default function RegisterMaintenance() {
               <input
                 type="number"
                 min="0"
+                step="1"
                 step="1"
                 value={form.mano_obra}
                 onChange={set("mano_obra")}
@@ -354,6 +386,7 @@ export default function RegisterMaintenance() {
               type="text"
               value={form.proveedor}
               onChange={set("proveedor")}
+              maxLength={TALLER.max}
               placeholder="Ej: Taller Central Bomberos"
               className={`${t.input} ${fieldErrors.proveedor ? t.inputError : ""}`}
             />

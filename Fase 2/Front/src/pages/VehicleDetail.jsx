@@ -5,6 +5,7 @@ import { useTheme } from "../theme.jsx";
 import { useVehicles } from "../store.jsx";
 import { canManageVehicles, canRegisterMaintenance } from "../permissions.js";
 import { clp, estadoPreventiva, fecha, hoyChile } from "../utils.js";
+import { errorMonto } from "../validaciones.js";
 import PageHeader from "../components/PageHeader.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
 import VehicleForm from "../components/VehicleForm.jsx";
@@ -125,6 +126,16 @@ export default function VehicleDetail() {
 
   const confirmFinish = async () => {
     setFinishError("");
+    // Mismas reglas que la API (PATCH /api/mantenimientos/:id/finalizar):
+    // pesos enteros entre $0 y $100.000.000.
+    const errorRepuestos = errorMonto(finishing.parts);
+    const errorManoObra = errorMonto(finishing.labor);
+    if (errorRepuestos || errorManoObra) {
+      setFinishError(
+        errorRepuestos ? `Repuestos: ${errorRepuestos}` : `Mano de obra: ${errorManoObra}`
+      );
+      return;
+    }
     setSavingFinish(true);
     try {
       await finishMaintenance(finishing.id, {
