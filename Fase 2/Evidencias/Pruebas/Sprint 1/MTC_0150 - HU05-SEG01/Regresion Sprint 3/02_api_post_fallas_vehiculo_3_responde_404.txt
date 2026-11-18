@@ -1,0 +1,18 @@
+MTC_0150 - HU05-SEG01 · Regresión Sprint 3 · paso 2
+Ejecutado: 18-11-2026 16:07 (hora de Chile), entorno local (API http://localhost:3000, datos del seed).
+
+Paso 1 (navegador, sesión de bombero.c1):
+  URL solicitada: http://localhost:5173/vehiculos/3/reportar-falla
+  Página final:   http://localhost:5173/dashboard   (captura 01; la lista solo muestra B-1, R-1 y B-9, de la Primera)
+
+Paso 2 (API, sesión de bombero.c1):
+  POST /api/auth/login  {"email":"bombero.c1@sigmave.cl", ...}  -> HTTP 200
+  POST /api/fallas
+  Body: {"id_vehiculo": 3, "urgencia": "alta", "descripcion": "Falla de prueba en otra compañía"}
+  Respuesta:
+    {"error":"Vehículo no encontrado"}
+    HTTP 404
+
+Verificación en la base (docker exec supabase_db_sigmave psql):
+  Reportes de falla del vehículo 3 antes: 0 · después: 0
+  Vehículo 3: B-2 operativo (sin cambios)
