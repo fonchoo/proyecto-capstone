@@ -83,6 +83,12 @@ const SELECT_MANTENCION = `
   JOIN usuario u           ON u.id_usuario = m.id_usuario
 `;
 
+// Columnas que devuelven POST y PUT. Explícitas (no RETURNING *): una
+// columna nueva no sale en la respuesta hasta que se agregue acá.
+const COLUMNAS_MANTENCION = `id_mantencion, fecha_ingreso, fecha_salida, kilometraje_ingreso,
+  detalle_trabajo, proveedor, costo_total, mano_obra, estado_mantencion, id_vehiculo,
+  id_tipo_mantencion, id_usuario`;
+
 const NO_ENCONTRADA = { error: "Mantención no encontrada" };
 const VEHICULO_NO_ENCONTRADO = { error: "Vehículo no encontrado" };
 
@@ -328,7 +334,7 @@ router.post("/", requireRol(...ROLES_MANTENCION), async (req, res, next) => {
             proveedor, costo_total, mano_obra, estado_mantencion, id_vehiculo,
             id_tipo_mantencion, id_usuario)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-         RETURNING *`,
+         RETURNING ${COLUMNAS_MANTENCION}`,
         [
           datos.fecha_ingreso,
           datos.fecha_salida,
@@ -458,7 +464,7 @@ router.put("/:id", requireRol(...ROLES_MANTENCION), async (req, res, next) => {
              detalle_trabajo = $4, proveedor = $5, costo_total = $6,
              mano_obra = $7, estado_mantencion = $8, id_vehiculo = $9,
              id_tipo_mantencion = $10
-         WHERE id_mantencion = $11 RETURNING *`,
+         WHERE id_mantencion = $11 RETURNING ${COLUMNAS_MANTENCION}`,
         [
           datos.fecha_ingreso,
           datos.fecha_salida,

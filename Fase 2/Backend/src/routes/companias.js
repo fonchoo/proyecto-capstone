@@ -12,6 +12,10 @@ import { companiasVisibles, puedeVerCompania } from "../alcance.js";
 
 const router = Router();
 
+// Columnas que devuelven POST y PUT. Explícitas (no RETURNING *): una
+// columna nueva no sale en la respuesta hasta que se agregue acá.
+const COLUMNAS_COMPANIA = "id_compania, numero_compania, nombre, direccion, comuna";
+
 // ---------- GET /api/companias (listar) ----------
 router.get("/", async (req, res, next) => {
   try {
@@ -60,7 +64,7 @@ router.post("/", requireRol("administrador"), async (req, res, next) => {
 
     const { rows } = await pool.query(
       `INSERT INTO compania (numero_compania, nombre, direccion, comuna)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
+       VALUES ($1, $2, $3, $4) RETURNING ${COLUMNAS_COMPANIA}`,
       [numero_compania, nombre, direccion || null, comuna || null]
     );
     res.status(201).json(rows[0]);
@@ -83,7 +87,7 @@ router.put("/:id", requireRol("administrador"), async (req, res, next) => {
     const { rows } = await pool.query(
       `UPDATE compania
        SET numero_compania = $1, nombre = $2, direccion = $3, comuna = $4
-       WHERE id_compania = $5 RETURNING *`,
+       WHERE id_compania = $5 RETURNING ${COLUMNAS_COMPANIA}`,
       [numero_compania, nombre, direccion || null, comuna || null, req.params.id]
     );
     if (rows.length === 0) {

@@ -50,7 +50,7 @@ router.post("/", requireRol("administrador"), async (req, res, next) => {
     }
 
     const { rows } = await pool.query(
-      "INSERT INTO tipo_mantencion (nombre, descripcion) VALUES ($1, $2) RETURNING *",
+      "INSERT INTO tipo_mantencion (nombre, descripcion) VALUES ($1, $2) RETURNING id_tipo_mantencion, nombre, descripcion",
       [nombre, descripcion || null]
     );
     res.status(201).json(rows[0]);
@@ -71,7 +71,7 @@ router.put("/:id", requireRol("administrador"), async (req, res, next) => {
     }
 
     const { rows } = await pool.query(
-      "UPDATE tipo_mantencion SET nombre = $1, descripcion = $2 WHERE id_tipo_mantencion = $3 RETURNING *",
+      "UPDATE tipo_mantencion SET nombre = $1, descripcion = $2 WHERE id_tipo_mantencion = $3 RETURNING id_tipo_mantencion, nombre, descripcion",
       [nombre, descripcion || null, req.params.id]
     );
     if (rows.length === 0) {

@@ -126,6 +126,11 @@ const SELECT_VEHICULO = `
   ${JOIN_PREVENTIVA}
 `;
 
+// Columnas que devuelven POST y PUT. Explícitas (no RETURNING *): una
+// columna nueva no sale en la respuesta hasta que se agregue acá.
+const COLUMNAS_VEHICULO =
+  "id_vehiculo, nomenclatura, tipo, patente, marca, modelo, ano_fabricacion, estado_vehiculo, id_compania";
+
 const NO_ENCONTRADO = { error: "Vehículo no encontrado" };
 const OTRA_COMPANIA = {
   error: "No puedes asignar vehículos a una compañía que no es la tuya",
@@ -183,7 +188,7 @@ router.post("/", requireRol(...ROLES_VEHICULOS), async (req, res, next) => {
       `INSERT INTO vehiculo
          (nomenclatura, tipo, patente, marca, modelo, ano_fabricacion, estado_vehiculo, id_compania)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING *`,
+       RETURNING ${COLUMNAS_VEHICULO}`,
       [
         datos.nomenclatura,
         datos.tipo,
@@ -224,7 +229,7 @@ router.put("/:id", requireRol(...ROLES_VEHICULOS), async (req, res, next) => {
       `UPDATE vehiculo
        SET nomenclatura = $1, tipo = $2, patente = $3, marca = $4, modelo = $5,
            ano_fabricacion = $6, id_compania = $7
-       WHERE id_vehiculo = $8 RETURNING *`,
+       WHERE id_vehiculo = $8 RETURNING ${COLUMNAS_VEHICULO}`,
       [
         datos.nomenclatura,
         datos.tipo,

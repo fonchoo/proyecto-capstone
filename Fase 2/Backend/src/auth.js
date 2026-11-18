@@ -37,9 +37,12 @@ if (!JWT_SECRET || JWT_SECRET.length < 32) {
   );
 }
 
-// Datos del usuario de la sesión (nunca el password).
+// Datos del usuario de la sesión: solo lo que el front usa. Nunca el
+// password, y tampoco el RUT: viajaba en cada /login y /me sin que
+// ninguna pantalla lo mostrara (minimización de datos). El RUT sigue
+// disponible para el administrador en /api/usuarios.
 export const SELECT_USUARIO_SESION = `
-  SELECT u.id_usuario, u.rut, u.nombre_completo, u.email,
+  SELECT u.id_usuario, u.nombre_completo, u.email,
          r.id_rol, r.nombre_rol, c.id_compania, c.nombre AS nombre_compania
   FROM usuario u
   JOIN rol r      ON r.id_rol = u.id_rol
