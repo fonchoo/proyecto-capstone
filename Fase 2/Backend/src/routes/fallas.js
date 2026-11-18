@@ -22,12 +22,12 @@ import { ROLES_MANTENCION, requireRol } from "../auth.js";
 import { companiasVisibles, filtroCompanias, puedeUsarVehiculo } from "../alcance.js";
 import { enTransaccion, recalcularEstadoVehiculo } from "../estadoVehiculo.js";
 import { notificarFallaDerivada, notificarFallaReportada } from "../notificaciones.js";
+import { DESCRIPCION_FALLA, errorLargo, textoLargo } from "../validaciones.js";
 
 const router = Router();
 
 const URGENCIAS = ["alta", "media", "baja"];
 const ESTADOS = ["pendiente", "derivado", "resuelto"];
-const MAX_DESCRIPCION = 2000;
 
 const SELECT_FALLA = `
   SELECT r.id_reporte_falla, r.fecha_reporte, r.urgencia, r.descripcion,
@@ -110,23 +110,22 @@ router.get("/:id", async (req, res, next) => {
 // sola transacción.
 router.post("/", async (req, res, next) => {
   const { id_vehiculo, urgencia } = req.body;
-  const descripcion =
-    typeof req.body.descripcion === "string" ? req.body.descripcion.trim() : "";
+  const descripcion = textoLargo(req.body.descripcion);
 
-  if (!id_vehiculo || !urgencia || !descripcion) {
-    return res.status(400).json({
-      error: 'Se requieren "id_vehiculo", "urgencia" y "descripcion"',
-    });
+  // Errores por campo, como el resto de los formularios. La urgencia
+  // no tiene valor por defecto: quien reporta tiene que elegirla.
+  const errores = {};
+  if (!id_vehiculo) errores.id_vehiculo = "Falta el vehículo";
+  if (!urgencia) errores.urgencia = "Elige la urgencia de la falla";
+  else if (!URGENCIAS.includes(urgencia)) errores.urgencia = "La urgencia debe ser alta, media o baja";
+  if (!descripcion) {
+    errores.descripcion = "Describe la falla antes de enviar el reporte";
+  } else {
+    const largo = errorLargo(descripcion, DESCRIPCION_FALLA.min, DESCRIPCION_FALLA.max);
+    if (largo) errores.descripcion = largo;
   }
-  if (!URGENCIAS.includes(urgencia)) {
-    return res
-      .status(400)
-      .json({ error: '"urgencia" debe ser "alta", "media" o "baja"' });
-  }
-  if (descripcion.length > MAX_DESCRIPCION) {
-    return res.status(400).json({
-      error: `La descripción no puede superar los ${MAX_DESCRIPCION} caracteres`,
-    });
+  if (Object.keys(errores).length) {
+    return res.status(400).json({ error: Object.values(errores).join(". "), campos: errores });
   }
 
   try {

@@ -5,6 +5,7 @@ import { useTheme } from "../theme.jsx";
 import { useVehicles } from "../store.jsx";
 import PageHeader from "../components/PageHeader.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
+import { DESCRIPCION_FALLA, errorLargo } from "../validaciones.js";
 
 export default function ReportFault() {
   const { theme } = useTheme();
@@ -14,7 +15,10 @@ export default function ReportFault() {
   const { vehicles, vehiclesLoaded, reportFault } = useVehicles();
 
   const vehicle = vehicles.find((v) => v.id === id);
-  const [urgency, setUrgency] = useState("alta");
+  // Sin urgencia por defecto: quien reporta tiene que elegirla (antes
+  // venía marcada "alta" y se enviaba sin pensarla).
+  const [urgency, setUrgency] = useState("");
+  const [urgencyError, setUrgencyError] = useState("");
   const [description, setDescription] = useState("");
   const [descError, setDescError] = useState("");
   const [formError, setFormError] = useState("");
@@ -28,10 +32,15 @@ export default function ReportFault() {
   // vehículo "no_operativo" y registra quién reporta (la sesión).
   const onSubmit = async () => {
     setFormError("");
-    if (!description.trim()) {
-      setDescError("Describe la falla antes de enviar el reporte");
-      return;
-    }
+    // Mismas reglas que la API (POST /api/fallas).
+    const desc = description.trim();
+    const errDesc = !desc
+      ? "Describe la falla antes de enviar el reporte"
+      : errorLargo(desc, DESCRIPCION_FALLA.min, DESCRIPCION_FALLA.max) || "";
+    const errUrg = urgency ? "" : "Elige la urgencia de la falla";
+    setDescError(errDesc);
+    setUrgencyError(errUrg);
+    if (errDesc || errUrg) return;
 
     setSending(true);
     try {
@@ -47,6 +56,8 @@ export default function ReportFault() {
       });
     } catch (err) {
       setFormError(err.message);
+      if (err.campos?.descripcion) setDescError(err.campos.descripcion);
+      if (err.campos?.urgencia) setUrgencyError(err.campos.urgencia);
       setSending(false);
     }
   };
@@ -72,18 +83,28 @@ export default function ReportFault() {
         </div>
 
         <div>
-          <label className={t.label}>Urgencia</label>
-          <div className="grid grid-cols-3 gap-2">
+          <label className={t.label}>Urgencia *</label>
+          <div className="grid grid-cols-3 gap-2" role="group" aria-label="Urgencia">
             {(["alta", "media", "baja"]).map((opt) => (
-              <button key={opt} onClick={() => setUrgency(opt)} className={t.urgBtn(opt, urgency === opt)}>
+              <button
+                key={opt}
+                type="button"
+                aria-pressed={urgency === opt}
+                onClick={() => {
+                  setUrgency(opt);
+                  setUrgencyError("");
+                }}
+                className={t.urgBtn(opt, urgency === opt)}
+              >
                 {opt}
               </button>
             ))}
           </div>
+          {urgencyError && <p className={`${errorCls} mt-1`}>{urgencyError}</p>}
         </div>
 
         <div>
-          <label className={t.label}>Descripción de la falla</label>
+          <label className={t.label}>Descripción de la falla *</label>
           <textarea
             value={description}
             onChange={(e) => {
@@ -91,11 +112,17 @@ export default function ReportFault() {
               if (descError) setDescError("");
             }}
             rows={5}
-            maxLength={2000}
+            maxLength={DESCRIPCION_FALLA.max}
             placeholder="Describe la falla con precisión: síntomas observados, cuándo ocurre, sistemas afectados..."
             className={`${t.textarea} ${descError ? t.inputError : ""}`}
           />
-          {descError && <p className={`${errorCls} mt-1`}>{descError}</p>}
+          {descError ? (
+            <p className={`${errorCls} mt-1`}>{descError}</p>
+          ) : (
+            <p className={`${t.note} mt-1`}>
+              {description.trim().length}/{DESCRIPCION_FALLA.max} · mínimo {DESCRIPCION_FALLA.min} caracteres
+            </p>
+          )}
         </div>
 
         {/* Adjuntar foto: oculto hasta implementarlo. El botón venía del
