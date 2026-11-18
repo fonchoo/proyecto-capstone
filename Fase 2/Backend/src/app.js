@@ -17,6 +17,7 @@ import mantenimientosRouter from "./routes/mantenimientos.js";
 import notificacionesRouter from "./routes/notificaciones.js";
 import fallasRouter from "./routes/fallas.js";
 import { DIAS_AVISO_PREVENTIVA, MESES_PREVENTIVA } from "./preventiva.js";
+import { MARCAS_VEHICULO, TIPOS_VEHICULO } from "./catalogoVehiculos.js";
 
 const app = express();
 
@@ -42,10 +43,11 @@ app.use("/api/notificaciones", notificacionesRouter);
 app.use("/api/fallas", fallasRouter);
 
 // Reglas de negocio que el front necesita mostrar (definidas una sola
-// vez en el backend, ver src/preventiva.js).
+// vez en el backend, ver src/preventiva.js y src/catalogoVehiculos.js).
 app.get("/api/config", (req, res) => {
   res.json({
     preventiva: { meses: MESES_PREVENTIVA, dias_aviso: DIAS_AVISO_PREVENTIVA },
+    vehiculos: { tipos: TIPOS_VEHICULO, marcas: MARCAS_VEHICULO },
   });
 });
 

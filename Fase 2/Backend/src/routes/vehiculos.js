@@ -23,25 +23,26 @@ import {
 } from "../alcance.js";
 import { COLUMNAS_PREVENTIVA, JOIN_PREVENTIVA } from "../preventiva.js";
 import { hoyChile } from "../estadoVehiculo.js";
+import {
+  ANIO_MIN_VEHICULO,
+  esPatente,
+  normalizarNomenclatura,
+  normalizarPatente,
+  texto,
+} from "../validaciones.js";
+import { MARCAS_VEHICULO, MODELO_MAX, TIPOS_VEHICULO } from "../catalogoVehiculos.js";
 
 const router = Router();
 
 const ESTADOS = ["operativo", "no_operativo", "en_mantencion"];
-const MAX_TEXTO = 255;
-
-// "klht-21" / "KLHT 21" / "kl.ht.21" -> "KLHT21". Así se guarda y así
-// se compara para impedir duplicados (HU03 CA5).
-const normalizarPatente = (valor) =>
-  String(valor ?? "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-
-const texto = (valor) => (typeof valor === "string" ? valor.trim() : "");
-
 // Valida el cuerpo de POST y PUT (HU03 CA2/CA4, HU04 CA3/CA6). Obligatorios:
 // nomenclatura, tipo, patente, marca, año y compañía; el modelo es
-// opcional. Devuelve { datos } normalizados o { errores } por campo.
+// opcional. Formatos en src/validaciones.js y listas en
+// src/catalogoVehiculos.js. Devuelve { datos } normalizados o
+// { errores } por campo.
 function validarVehiculo(body) {
   const datos = {
-    nomenclatura: texto(body.nomenclatura),
+    nomenclatura: normalizarNomenclatura(body.nomenclatura),
     tipo: texto(body.tipo),
     patente: normalizarPatente(body.patente),
     marca: texto(body.marca),
@@ -52,24 +53,33 @@ function validarVehiculo(body) {
   const errores = {};
   const maxAnio = Number(hoyChile().slice(0, 4)) + 1;
 
-  if (!datos.nomenclatura) errores.nomenclatura = "La nomenclatura es obligatoria";
+  if (!texto(body.nomenclatura)) errores.nomenclatura = "La nomenclatura es obligatoria";
+  else if (!datos.nomenclatura) {
+    errores.nomenclatura = "Usa la sigla y el número del carro, por ejemplo B-1 o BX-2";
+  }
+
   if (!datos.tipo) errores.tipo = "El tipo es obligatorio";
+  else if (!TIPOS_VEHICULO.includes(datos.tipo)) errores.tipo = "Elige un tipo de la lista";
+
   if (!datos.patente) errores.patente = "La patente es obligatoria";
+  else if (!esPatente(datos.patente)) {
+    errores.patente = "La patente debe ser de 4 letras y 2 números (KLHT-21) o de 2 letras y 4 números (AB-1234)";
+  }
+
   if (!datos.marca) errores.marca = "La marca es obligatoria";
+  else if (!Object.hasOwn(MARCAS_VEHICULO, datos.marca)) errores.marca = "Elige una marca de la lista";
+
+  if (datos.modelo && datos.modelo.length > MODELO_MAX) {
+    errores.modelo = `Máximo ${MODELO_MAX} caracteres`;
+  }
   if (
     !Number.isInteger(datos.ano_fabricacion) ||
-    datos.ano_fabricacion < 1900 ||
+    datos.ano_fabricacion < ANIO_MIN_VEHICULO ||
     datos.ano_fabricacion > maxAnio
   ) {
-    errores.ano_fabricacion = `Año inválido (1900 - ${maxAnio})`;
+    errores.ano_fabricacion = `Año inválido (${ANIO_MIN_VEHICULO} - ${maxAnio})`;
   }
   if (!Number.isInteger(datos.id_compania)) errores.id_compania = "Selecciona una compañía";
-
-  for (const campo of ["nomenclatura", "tipo", "patente", "marca", "modelo"]) {
-    if (datos[campo] && datos[campo].length > MAX_TEXTO && !errores[campo]) {
-      errores[campo] = `Máximo ${MAX_TEXTO} caracteres`;
-    }
-  }
 
   return Object.keys(errores).length ? { errores } : { datos };
 }
@@ -83,16 +93,28 @@ function responderErrores(res, errores) {
   });
 }
 
-// La patente ya existe (UNIQUE uq_vehiculo_patente). Es única en todas
-// las compañías: es la del registro nacional de vehículos.
-function esPatenteDuplicada(error) {
-  return error?.code === "23505" && error.constraint === "uq_vehiculo_patente";
+// Patente o nomenclatura repetida (UNIQUE de la base): el 409 lleva el
+// mensaje bajo el campo que corresponde, o null si es otro error.
+// - Patente (uq_vehiculo_patente): única en TODAS las compañías, es la
+//   del registro nacional de vehículos.
+// - Nomenclatura (uq_vehiculo_compania_nomenclatura): única dentro de
+//   cada compañía; la B-1 de la Primera y la B-1 de la Segunda conviven.
+function duplicado(error, datos) {
+  if (error?.code !== "23505") return null;
+  if (error.constraint === "uq_vehiculo_patente") {
+    return {
+      error: `Ya existe un vehículo registrado con la patente ${datos.patente}`,
+      campos: { patente: "Esta patente ya está registrada" },
+    };
+  }
+  if (error.constraint === "uq_vehiculo_compania_nomenclatura") {
+    return {
+      error: `La compañía ya tiene un vehículo ${datos.nomenclatura}`,
+      campos: { nomenclatura: "Esta compañía ya tiene un vehículo con esa nomenclatura" },
+    };
+  }
+  return null;
 }
-
-const patenteDuplicada = (patente) => ({
-  error: `Ya existe un vehículo registrado con la patente ${patente}`,
-  campos: { patente: "Esta patente ya está registrada" },
-});
 
 const SELECT_VEHICULO = `
   SELECT v.id_vehiculo, v.nomenclatura, v.tipo, v.patente, v.marca, v.modelo,
@@ -175,9 +197,8 @@ router.post("/", requireRol(...ROLES_VEHICULOS), async (req, res, next) => {
     );
     res.status(201).json(rows[0]);
   } catch (error) {
-    if (esPatenteDuplicada(error)) {
-      return res.status(409).json(patenteDuplicada(datos.patente));
-    }
+    const conflicto = duplicado(error, datos);
+    if (conflicto) return res.status(409).json(conflicto);
     next(error);
   }
 });
@@ -220,9 +241,8 @@ router.put("/:id", requireRol(...ROLES_VEHICULOS), async (req, res, next) => {
     }
     res.json(rows[0]);
   } catch (error) {
-    if (esPatenteDuplicada(error)) {
-      return res.status(409).json(patenteDuplicada(datos.patente));
-    }
+    const conflicto = duplicado(error, datos);
+    if (conflicto) return res.status(409).json(conflicto);
     next(error);
   }
 });
