@@ -193,8 +193,9 @@ pública se usan dos proyectos de Vercel y un proyecto de Supabase en la nube
   sigue usando `src/index.js`). No se usa el preset «Express» de Vercel porque
   nombra la función con su ruta en el repo, `Fase 2/...`, y rechaza el
   espacio; por eso `vercel.json` fija `"framework": null` y manda todas las
-  rutas a `api/` con un `rewrite`. La carpeta `public` vacía que crea el build
-  evita que Vercel publique los archivos de `Backend/` como estáticos.
+  rutas a `api/` con un `rewrite`. La carpeta `public` que crea el build (solo
+  con un `robots.txt`, porque Vercel no acepta una salida vacía) evita que
+  publique los archivos de `Backend/` como estáticos.
 - **Variables de la API en Vercel:** las mismas `PG*` del `.env`, apuntando al
   *pooler* de Supabase (modo transacción, puerto 6543), más:
 
