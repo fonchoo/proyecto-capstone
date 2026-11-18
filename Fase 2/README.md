@@ -189,6 +189,12 @@ pública se usan dos proyectos de Vercel y un proyecto de Supabase en la nube
   necesita nodemon ni la CLI de Supabase) y corre la función en São Paulo
   (`gru1`), la misma región que la base: por defecto Vercel usa Washington
   (`iad1`) y cada consulta cruzaría el continente.
+- **`Backend/api/index.js`** es la entrada de la API en Vercel (en local se
+  sigue usando `src/index.js`). No se usa el preset «Express» de Vercel porque
+  nombra la función con su ruta en el repo, `Fase 2/...`, y rechaza el
+  espacio; por eso `vercel.json` fija `"framework": null` y manda todas las
+  rutas a `api/` con un `rewrite`. La carpeta `public` vacía que crea el build
+  evita que Vercel publique los archivos de `Backend/` como estáticos.
 - **Variables de la API en Vercel:** las mismas `PG*` del `.env`, apuntando al
   *pooler* de Supabase (modo transacción, puerto 6543), más:
 

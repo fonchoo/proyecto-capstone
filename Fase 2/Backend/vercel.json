@@ -1,5 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
   "installCommand": "npm ci --omit=dev",
-  "regions": ["gru1"]
+  "buildCommand": "mkdir -p public",
+  "outputDirectory": "public",
+  "regions": ["gru1"],
+  "rewrites": [{ "source": "/(.*)", "destination": "/api" }]
 }
