@@ -64,7 +64,9 @@ Verificación local antes de subir: `npm run build` en Front, y que la API siga 
 
 ## Paso 2 · API en Vercel (≈ 30 min)
 
-1. **Add New → Project →** importar el repositorio. En **Root Directory**: `Fase 2/Backend`. Vercel detecta Express solo.
+> **La API se publica con la CLI, no con la integración de Git.** Con Git, Vercel nombra la función con su ruta en el repositorio (`Fase 2/Backend/api/index.js`) y rechaza el despliegue por el espacio de «Fase 2» (*A Serverless Function has an invalid name*). Pasa con el preset Express, con la carpeta `api/` y aunque se desactive «Include files outside the root directory». Subida con la CLI desde `Backend/`, la función queda como `api/index.js`.
+
+1. Crear el proyecto `sigmave-api` en Vercel **sin** conectar el repositorio (o, si ya se importó, dejar **Root Directory** vacío y desconectar Git en **Settings → Git**). Preset: **Other**.
 2. Variables de entorno:
 
    | Variable | Valor |
@@ -80,7 +82,17 @@ Verificación local antes de subir: `npm run build` en Front, y que la API siga 
    | `COOKIE_SECURE` | `true` |
    | `NODE_ENV` | `production` |
 
-3. Desplegar y probar el login directo contra la API desde Git Bash; tiene que responder `200` con un `Set-Cookie`:
+3. Desde `Backend/`, iniciar sesión, vincular la carpeta con el proyecto y desplegar. `Backend/.vercelignore` limita la subida a `api/`, `src/`, `package*.json` y `vercel.json`; sin él la CLI subiría el `.env` local.
+
+   ```bash
+   npx vercel login
+   npx vercel link
+   npx vercel deploy --prod
+   ```
+
+   Cada cambio en la API se publica repitiendo `npx vercel deploy --prod`.
+
+4. Probar el login directo contra la API desde Git Bash; tiene que responder `200` con un `Set-Cookie`:
 
    ```bash
    curl -i -X POST https://<api>.vercel.app/api/auth/login -H "Content-Type: application/json" -d '{"email":"admin@admin.cl","password":"admin1234"}'

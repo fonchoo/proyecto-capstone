@@ -16,6 +16,9 @@ node_modules/
 .env.*
 !.env.example
 
+# ---- Vercel CLI (vínculo local con el proyecto, ver .vercelignore) ----
+.vercel/
+
 # ---- Logs ----
 *.log
 npm-debug.log*

@@ -190,10 +190,14 @@ pública se usan dos proyectos de Vercel y un proyecto de Supabase en la nube
   (`gru1`), la misma región que la base: por defecto Vercel usa Washington
   (`iad1`) y cada consulta cruzaría el continente.
 - **`Backend/api/index.js`** es la entrada de la API en Vercel (en local se
-  sigue usando `src/index.js`). No se usa el preset «Express» de Vercel porque
-  nombra la función con su ruta en el repo, `Fase 2/...`, y rechaza el
-  espacio; por eso `vercel.json` fija `"framework": null` y manda todas las
-  rutas a `api/` con un `rewrite`. La carpeta `public` que crea el build (solo
+  sigue usando `src/index.js`); `vercel.json` fija `"framework": null` y
+  manda todas las rutas ahí con un `rewrite`.
+- **La API se publica con la CLI, no con la integración de Git.** Vercel
+  nombra las funciones con su ruta en el repositorio
+  (`Fase 2/Backend/api/index.js`) y rechaza el espacio de «Fase 2». Desde
+  `Backend/`: `npx vercel deploy --prod`. `Backend/.vercelignore` es una lista
+  blanca: sin ella la CLI subiría el `.env` local. El frontend sí se publica
+  con Git, porque es estático y no tiene funciones. La carpeta `public` que crea el build (solo
   con un `robots.txt`, porque Vercel no acepta una salida vacía) evita que
   publique los archivos de `Backend/` como estáticos.
 - **Variables de la API en Vercel:** las mismas `PG*` del `.env`, apuntando al

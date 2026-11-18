@@ -1,0 +1,20 @@
+# ============================================================
+# .vercelignore  (Backend SIGMAVE)
+# ============================================================
+# La API se publica con la CLI de Vercel desde esta carpeta
+# (`npx vercel deploy --prod`, ver PLAN_DESPLIEGUE.md), no con la
+# integración de Git: Vercel nombra las funciones con su ruta en el
+# repositorio, "Fase 2/Backend/api/index.js", y rechaza el espacio.
+#
+# La CLI sube todo lo que no esté excluido, y su lista por defecto NO
+# excluye .env (secretos locales). Por eso es una lista blanca: se
+# excluye todo y se permite solo lo que la función necesita. Las
+# variables de producción viven en el panel de Vercel.
+# ============================================================
+
+/*
+!api
+!src
+!package.json
+!package-lock.json
+!vercel.json
