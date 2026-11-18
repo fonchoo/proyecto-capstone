@@ -8,6 +8,16 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { pool } from "../db.js";
 import { requireRol } from "../auth.js";
+import {
+  NOMBRE,
+  errorLargo,
+  errorPassword,
+  esEmail,
+  normalizarEmail,
+  normalizarRut,
+  texto,
+  vacio,
+} from "../validaciones.js";
 
 const router = Router();
 
@@ -52,34 +62,97 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
+// Valida el cuerpo de POST y PUT con las reglas de src/validaciones.js.
+// La contraseña es obligatoria al crear; al editar, si no viene, se
+// conserva la actual. Devuelve { datos } normalizados o { errores } por
+// campo (el front los muestra bajo cada input).
+async function validarUsuario(body, { exigePassword }) {
+  const errores = {};
+  const datos = {
+    rut: normalizarRut(body.rut),
+    nombre_completo: texto(body.nombre_completo),
+    email: normalizarEmail(body.email),
+    password: typeof body.password === "string" ? body.password : "",
+    id_rol: Number(body.id_rol),
+    id_compania: Number(body.id_compania),
+  };
+
+  if (vacio(body.rut)) errores.rut = "El RUT es obligatorio";
+  else if (!datos.rut) errores.rut = "El RUT no es válido (revisa el dígito verificador)";
+
+  if (!datos.nombre_completo) {
+    errores.nombre_completo = "El nombre es obligatorio";
+  } else {
+    const largo = errorLargo(datos.nombre_completo, NOMBRE.min, NOMBRE.max);
+    if (largo) errores.nombre_completo = largo;
+    else if (!NOMBRE.patron.test(datos.nombre_completo)) {
+      errores.nombre_completo = "El nombre solo puede tener letras, espacios, apóstrofo y guion";
+    }
+  }
+
+  if (!datos.email) errores.email = "El correo es obligatorio";
+  else if (!esEmail(datos.email)) errores.email = "El correo no tiene un formato válido";
+
+  if (datos.password || exigePassword) {
+    const error = errorPassword(datos.password);
+    if (error) errores.password = error;
+  }
+
+  // Rol y compañía tienen que existir (la FK lo exige igual, pero así
+  // el error llega bajo su campo y no como un 500).
+  if (!Number.isInteger(datos.id_rol)) {
+    errores.id_rol = "Selecciona un rol";
+  } else if ((await pool.query("SELECT 1 FROM rol WHERE id_rol = $1", [datos.id_rol])).rowCount === 0) {
+    errores.id_rol = "Rol inválido";
+  }
+  if (!Number.isInteger(datos.id_compania)) {
+    errores.id_compania = "Selecciona una compañía";
+  } else if (
+    (await pool.query("SELECT 1 FROM compania WHERE id_compania = $1", [datos.id_compania]))
+      .rowCount === 0
+  ) {
+    errores.id_compania = "Compañía inválida";
+  }
+
+  return Object.keys(errores).length ? { errores } : { datos };
+}
+
+function responderErrores(res, errores) {
+  return res.status(400).json({ error: Object.values(errores).join(". "), campos: errores });
+}
+
+// RUT o correo repetido (UNIQUE de la base): el mensaje va bajo el
+// campo que corresponde. Devuelve el cuerpo del 409 o null.
+function duplicado(error) {
+  if (error?.code !== "23505") return null;
+  if (error.constraint === "usuario_rut_key") {
+    return { error: "Ya existe un usuario con ese RUT", campos: { rut: "Este RUT ya está registrado" } };
+  }
+  if (error.constraint === "usuario_email_key") {
+    return { error: "Ya existe un usuario con ese correo", campos: { email: "Este correo ya está registrado" } };
+  }
+  return { error: "RUT o correo ya registrado" };
+}
+
+const COLUMNAS_USUARIO = "id_usuario, rut, nombre_completo, email, id_rol, id_compania";
+
 // ---------- POST /api/usuarios (crear) ----------
 router.post("/", async (req, res, next) => {
   try {
-    const { rut, nombre_completo, email, password, id_rol, id_compania } =
-      req.body;
+    const { datos, errores } = await validarUsuario(req.body, { exigePassword: true });
+    if (errores) return responderErrores(res, errores);
 
-    if (!rut || !nombre_completo || !email || !password || !id_rol || !id_compania) {
-      return res.status(400).json({
-        error:
-          'Se requieren "rut", "nombre_completo", "email", "password", "id_rol" e "id_compania"',
-      });
-    }
-
-    const hash = await bcrypt.hash(password, 10);
-
+    const hash = await bcrypt.hash(datos.password, 10);
     const { rows } = await pool.query(
       `INSERT INTO usuario (rut, nombre_completo, email, password, id_rol, id_compania)
        VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id_usuario, rut, nombre_completo, email, id_rol, id_compania`,
-      [rut, nombre_completo, email, hash, id_rol, id_compania]
+       RETURNING ${COLUMNAS_USUARIO}`,
+      [datos.rut, datos.nombre_completo, datos.email, hash, datos.id_rol, datos.id_compania]
     );
     res.status(201).json(rows[0]);
   } catch (error) {
-    if (error.code === "23505") {
-      return res
-        .status(409)
-        .json({ error: "RUT o email ya registrado" });
-    }
+    const conflicto = duplicado(error);
+    if (conflicto) return res.status(409).json(conflicto);
     next(error);
   }
 });
@@ -87,33 +160,23 @@ router.post("/", async (req, res, next) => {
 // ---------- PUT /api/usuarios/:id (actualizar) ----------
 router.put("/:id", async (req, res, next) => {
   try {
-    const { rut, nombre_completo, email, password, id_rol, id_compania } =
-      req.body;
-
-    if (!rut || !nombre_completo || !email || !id_rol || !id_compania) {
-      return res.status(400).json({
-        error:
-          'Se requieren "rut", "nombre_completo", "email", "id_rol" e "id_compania"',
-      });
-    }
+    const { datos, errores } = await validarUsuario(req.body, { exigePassword: false });
+    if (errores) return responderErrores(res, errores);
 
     // Si viene password, se actualiza; si no, se conserva el actual.
-    const params = [rut, nombre_completo, email, id_rol, id_compania, req.params.id];
-    let set =
-      "rut = $1, nombre_completo = $2, email = $3, id_rol = $4, id_compania = $5";
-
-    if (password) {
-      const hash = await bcrypt.hash(password, 10);
-      set =
-        "rut = $1, nombre_completo = $2, email = $3, password = $4, id_rol = $5, id_compania = $6";
-      params.splice(3, 0, hash);
+    const params = [datos.rut, datos.nombre_completo, datos.email, datos.id_rol, datos.id_compania];
+    let set = "rut = $1, nombre_completo = $2, email = $3, id_rol = $4, id_compania = $5";
+    if (datos.password) {
+      params.push(await bcrypt.hash(datos.password, 10));
+      set += `, password = $${params.length}`;
     }
+    params.push(req.params.id);
 
     const { rows } = await pool.query(
       `UPDATE usuario
        SET ${set}
        WHERE id_usuario = $${params.length}
-       RETURNING id_usuario, rut, nombre_completo, email, id_rol, id_compania`,
+       RETURNING ${COLUMNAS_USUARIO}`,
       params
     );
     if (rows.length === 0) {
@@ -121,11 +184,8 @@ router.put("/:id", async (req, res, next) => {
     }
     res.json(rows[0]);
   } catch (error) {
-    if (error.code === "23505") {
-      return res
-        .status(409)
-        .json({ error: "RUT o email ya registrado" });
-    }
+    const conflicto = duplicado(error);
+    if (conflicto) return res.status(409).json(conflicto);
     next(error);
   }
 });

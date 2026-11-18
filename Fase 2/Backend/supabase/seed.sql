@@ -46,9 +46,9 @@ ON CONFLICT (id_compania) DO NOTHING;
 -- (id, email o rut), no solo el id. Asi el seed no falla en una base
 -- donde esos datos ya existen con otro id.
 INSERT INTO usuario (id_usuario, rut, nombre_completo, email, password, id_rol, id_compania) VALUES
-  (1, '123456789', 'Administrador', 'administrador@gmail.com',
+  (1, '12345678-5', 'Administrador', 'administrador@gmail.com',
    '$2a$12$NhfoUkbg4sc04kf5UKO23uFXo7vSYEysSzM7qcwU/MtwoTEI5U4P2', 4, 1),
-  (2, '111111111', 'Admin', 'admin@admin.cl',
+  (2, '11111111-1', 'Admin', 'admin@admin.cl',
    '$2a$12$NhfoUkbg4sc04kf5UKO23uFXo7vSYEysSzM7qcwU/MtwoTEI5U4P2', 4, 1)
 ON CONFLICT DO NOTHING;
 
@@ -57,17 +57,17 @@ ON CONFLICT DO NOTHING;
 --   Primera  -> bombero.c1@sigmave.cl, teniente.c1@sigmave.cl, inspector.c1@sigmave.cl
 --   Segunda  -> bombero.c2@sigmave.cl, teniente.c2@sigmave.cl, inspector.c2@sigmave.cl
 INSERT INTO usuario (id_usuario, rut, nombre_completo, email, password, id_rol, id_compania) VALUES
-  (3, '200000001', 'Bombero Primera',   'bombero.c1@sigmave.cl',
+  (3, '20000001-3', 'Bombero Primera',   'bombero.c1@sigmave.cl',
    '$2b$12$oGzAOWhvgNpE3YJOVq18De/6ZJMuY.IKmmJblJTA6Ju4YKhl8IhDO', 1, 1),
-  (4, '200000002', 'Teniente Primera',  'teniente.c1@sigmave.cl',
+  (4, '20000002-1', 'Teniente Primera',  'teniente.c1@sigmave.cl',
    '$2b$12$oGzAOWhvgNpE3YJOVq18De/6ZJMuY.IKmmJblJTA6Ju4YKhl8IhDO', 2, 1),
-  (5, '200000003', 'Inspector Primera', 'inspector.c1@sigmave.cl',
+  (5, '20000003-K', 'Inspector Primera', 'inspector.c1@sigmave.cl',
    '$2b$12$oGzAOWhvgNpE3YJOVq18De/6ZJMuY.IKmmJblJTA6Ju4YKhl8IhDO', 3, 1),
-  (6, '300000001', 'Bombero Segunda',   'bombero.c2@sigmave.cl',
+  (6, '20000004-8', 'Bombero Segunda',   'bombero.c2@sigmave.cl',
    '$2b$12$oGzAOWhvgNpE3YJOVq18De/6ZJMuY.IKmmJblJTA6Ju4YKhl8IhDO', 1, 2),
-  (7, '300000002', 'Teniente Segunda',  'teniente.c2@sigmave.cl',
+  (7, '20000005-6', 'Teniente Segunda',  'teniente.c2@sigmave.cl',
    '$2b$12$oGzAOWhvgNpE3YJOVq18De/6ZJMuY.IKmmJblJTA6Ju4YKhl8IhDO', 2, 2),
-  (8, '300000003', 'Inspector Segunda', 'inspector.c2@sigmave.cl',
+  (8, '20000006-4', 'Inspector Segunda', 'inspector.c2@sigmave.cl',
    '$2b$12$oGzAOWhvgNpE3YJOVq18De/6ZJMuY.IKmmJblJTA6Ju4YKhl8IhDO', 3, 2)
 ON CONFLICT DO NOTHING;
 

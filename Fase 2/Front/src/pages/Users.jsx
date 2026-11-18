@@ -5,7 +5,15 @@ import { useVehicles } from "../store.jsx";
 import PageHeader from "../components/PageHeader.jsx";
 import EmptyState from "../components/EmptyState.jsx";
 import { IcPlus, IcUsers } from "../components/Icons.jsx";
-import { normalizarRut } from "../utils.js";
+import {
+  NOMBRE,
+  errorLargo,
+  errorPassword,
+  esEmail,
+  normalizarEmail,
+  normalizarRut,
+  texto,
+} from "../validaciones.js";
 
 // Nombres de rol en BD -> etiquetas mostradas en la UI.
 const ROLE_LABELS = {
@@ -89,25 +97,32 @@ export default function Users() {
     });
   }, [user?.id_compania]);
 
+  // Mismas reglas que la API (validarUsuario en Backend/src/routes/usuarios.js).
   const validate = () => {
     const errors = {};
-    if (!form.nombre_completo.trim()) {
+    const nombre = texto(form.nombre_completo);
+    if (!nombre) {
       errors.nombre_completo = "El nombre es obligatorio";
+    } else if (errorLargo(nombre, NOMBRE.min, NOMBRE.max)) {
+      errors.nombre_completo = errorLargo(nombre, NOMBRE.min, NOMBRE.max);
+    } else if (!NOMBRE.patron.test(nombre)) {
+      errors.nombre_completo = "El nombre solo puede tener letras, espacios, apóstrofo y guion";
     }
     if (!form.rut.trim()) {
       errors.rut = "El RUT es obligatorio";
     } else if (!normalizarRut(form.rut)) {
       errors.rut = "El RUT no es válido (revisa el dígito verificador)";
     }
-    if (!form.email.trim()) {
+    const email = normalizarEmail(form.email);
+    if (!email) {
       errors.email = "El correo es obligatorio";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+    } else if (!esEmail(email)) {
       errors.email = "El correo no tiene un formato válido";
     }
     if (!form.password) {
       errors.password = "La contraseña es obligatoria";
-    } else if (form.password.length < 6) {
-      errors.password = "La contraseña debe tener al menos 6 caracteres";
+    } else if (errorPassword(form.password)) {
+      errors.password = errorPassword(form.password);
     }
     if (!form.id_rol) {
       errors.id_rol = "Selecciona un rol";
@@ -134,8 +149,8 @@ export default function Users() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           rut: normalizarRut(form.rut),
-          nombre_completo: form.nombre_completo.trim(),
-          email: form.email.trim(),
+          nombre_completo: texto(form.nombre_completo),
+          email: normalizarEmail(form.email),
           password: form.password,
           id_rol: Number(form.id_rol),
           id_compania: Number(form.id_compania),
@@ -144,6 +159,9 @@ export default function Users() {
       const body = await res.json().catch(() => ({}));
 
       if (!res.ok) {
+        // 400/409 de la API: cada error bajo su campo (RUT o correo
+        // repetido, formato inválido que se haya escapado del front).
+        if (body.campos) setFieldErrors(body.campos);
         throw new Error(body.error || "No se pudo crear el usuario");
       }
 
@@ -220,7 +238,7 @@ export default function Users() {
                 type="password"
                 value={form.password}
                 onChange={set("password")}
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Mínimo 8, con letras y números"
                 className={`${t.input} ${fieldErrors.password ? t.inputError : ""}`}
               />
               {fieldErrors.password && <p className={`${errorCls} mt-1`}>{fieldErrors.password}</p>}
