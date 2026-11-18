@@ -4,6 +4,7 @@ import { themes } from "../themeStyles.js";
 import { useTheme } from "../theme.jsx";
 import { useVehicles } from "../store.jsx";
 import { IcEye, IcEyeOff, IcFlame } from "../components/Icons.jsx";
+import { esEmail, normalizarEmail } from "../validaciones.js";
 
 export default function Login() {
   const { theme } = useTheme();
@@ -24,18 +25,20 @@ export default function Login() {
 
   const errorCls = theme === "v1" ? "text-xs text-red-400" : "text-sm text-red-600";
 
-  // Validaciones del formulario antes de llamar a la API.
+  // Validaciones del formulario antes de llamar a la API. La
+  // contraseña solo se exige: las reglas de largo y formato rigen al
+  // CREARLA (src/validaciones.js), y una cuenta antigua puede tener una
+  // más corta. El límite de intentos lo aplica la API (responde 429).
   const validate = () => {
     const errors = {};
-    if (!email.trim()) {
+    const correo = normalizarEmail(email);
+    if (!correo) {
       errors.email = "El correo es obligatorio";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    } else if (!esEmail(correo)) {
       errors.email = "El correo no tiene un formato válido";
     }
     if (!password) {
       errors.password = "La contraseña es obligatoria";
-    } else if (password.length < 6) {
-      errors.password = "La contraseña debe tener al menos 6 caracteres";
     }
     return errors;
   };
@@ -53,7 +56,7 @@ export default function Login() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), password }),
+        body: JSON.stringify({ email: normalizarEmail(email), password }),
       });
 
       const data = await res.json().catch(() => ({}));
