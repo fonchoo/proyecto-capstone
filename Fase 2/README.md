@@ -169,6 +169,38 @@ cd ../Front
 docker compose -f docker-compose.yml --profile prod up -d --build   # -> http://localhost:8080
 ```
 
+## 🌐 Publicación (Vercel + Supabase en la nube)
+
+Docker es el entorno de **desarrollo**. Para publicar el sistema con una URL
+pública se usan dos proyectos de Vercel y un proyecto de Supabase en la nube
+(plan gratuito). El paso a paso está en [PLAN_DESPLIEGUE.md](PLAN_DESPLIEGUE.md).
+
+| Proyecto | Raíz en Vercel | Qué publica |
+|---|---|---|
+| `sigmave-api` | `Fase 2/Backend` | La API Express como función serverless |
+| `sigmave-web` | `Fase 2/Front` | El frontend compilado con Vite |
+
+- **`Front/vercel.json`** reenvía `/api/*` al proyecto de la API, así el
+  navegador ve un solo dominio: la cookie de sesión es `SameSite=strict` y no
+  viajaría entre dominios distintos. Además devuelve `index.html` en cualquier
+  otra ruta, para que recargar en `/vehiculos/1` no dé 404. Si la API queda
+  publicada con otra URL, hay que cambiarla ahí.
+- **`Backend/vercel.json`** instala sin dependencias de desarrollo: Vercel no
+  necesita nodemon ni la CLI de Supabase.
+- **Variables de la API en Vercel:** las mismas `PG*` del `.env`, apuntando al
+  *pooler* de Supabase (modo transacción, puerto 6543), más:
+
+  | Variable | Valor | Por qué |
+  |---|---|---|
+  | `PGSSL` | `true` | Supabase en la nube exige conexión cifrada |
+  | `PGPOOL_MAX` | `3` | Cada instancia serverless abre su propio pool |
+  | `JWT_SECRET` | uno nuevo, distinto del local | Firma las sesiones |
+  | `COOKIE_SECURE` | `true` | La cookie solo viaja por HTTPS |
+
+- **Base de datos:** desde `Backend/`, `npx supabase link --project-ref <ref>`
+  y luego `npx supabase db push --include-seed` aplican las mismas migraciones
+  y el seed de desarrollo.
+
 ## 🔐 Sesión, roles y compañías
 
 - **Sesión:** el login entrega un JWT en una cookie `httpOnly` (8 h). Toda la API

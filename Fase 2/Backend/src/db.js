@@ -20,12 +20,22 @@ const { Pool, types } = pg;
 // detrás de UTC). Una fecha sin hora debe viajar sin hora. 1082 = DATE.
 types.setTypeParser(1082, (valor) => valor);
 
+// Publicación (Vercel + Supabase en la nube, ver PLAN_DESPLIEGUE.md):
+// - PGSSL=true: Supabase en la nube exige conexión cifrada. Se acepta
+//   su certificado sin validar la cadena (rejectUnauthorized: false)
+//   para no tener que distribuir el CA; el tráfico igual va cifrado.
+//   En local (Supabase CLI) no se define y la conexión va sin SSL.
+// - PGPOOL_MAX: en serverless cada instancia de la función abre su
+//   propio pool, así que en Vercel se usa un tope bajo (p. ej. 3) para
+//   no agotar las conexiones del pooler. Sin definir, el default de pg.
 export const pool = new Pool({
   host: process.env.PGHOST,
   port: Number(process.env.PGPORT),
   user: process.env.PGUSER,
   password: process.env.PGPASSWORD,
   database: process.env.PGDATABASE,
+  ssl: process.env.PGSSL === "true" ? { rejectUnauthorized: false } : undefined,
+  max: Number(process.env.PGPOOL_MAX) || 10,
 });
 
 // Si Postgres se reinicia (p. ej. "supabase db reset") o corta una
