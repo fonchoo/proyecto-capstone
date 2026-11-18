@@ -1,5 +1,5 @@
 MTC_0150 - HU05-SEG01 · Regresión Sprint 3 · paso 2
-Ejecutado: 18-11-2026 16:07 (hora de Chile), entorno local (API http://localhost:3000, datos del seed).
+Ejecutado: 18-11-2026 13:07 (hora de Chile), entorno local (API http://localhost:3000, datos del seed).
 
 Paso 1 (navegador, sesión de bombero.c1):
   URL solicitada: http://localhost:5173/vehiculos/3/reportar-falla

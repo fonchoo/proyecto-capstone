@@ -171,14 +171,20 @@ docker compose -f docker-compose.yml --profile prod up -d --build   # -> http://
 
 ## 🌐 Publicación (Vercel + Supabase en la nube)
 
+**Sistema publicado: https://proyecto-capstone-front.vercel.app**
+
 Docker es el entorno de **desarrollo**. Para publicar el sistema con una URL
 pública se usan dos proyectos de Vercel y un proyecto de Supabase en la nube
-(plan gratuito). El paso a paso está en [PLAN_DESPLIEGUE.md](PLAN_DESPLIEGUE.md).
+(plan gratuito, región São Paulo). El paso a paso está en
+[PLAN_DESPLIEGUE.md](PLAN_DESPLIEGUE.md).
 
-| Proyecto | Raíz en Vercel | Qué publica |
+| Proyecto | URL | Cómo se publica |
 |---|---|---|
-| `proyecto-capstone-backend` | `Fase 2/Backend` | La API Express como función serverless, en https://proyecto-capstone-backend.vercel.app (se publica con la CLI) |
-| `sigmave-web` | `Fase 2/Front` | El frontend compilado con Vite |
+| `proyecto-capstone-front` | https://proyecto-capstone-front.vercel.app | Integración de Git: cada push a `dev` publica el frontend (raíz `Fase 2/Front`, preset Vite) |
+| `proyecto-capstone-backend` | https://proyecto-capstone-backend.vercel.app | Con la CLI desde `Backend/`: `npx vercel deploy --prod` (la API Express como función serverless) |
+
+Un cambio de esquema se publica aparte: desde `Backend/`, `npx supabase db push`
+aplica las migraciones nuevas en la base de la nube.
 
 - **`Front/vercel.json`** reenvía `/api/*` al proyecto de la API, así el
   navegador ve un solo dominio: la cookie de sesión es `SameSite=strict` y no

@@ -1,0 +1,22 @@
+Verificación del sistema publicado · 18-11-2026 13:19 (hora de Chile)
+URL pública: https://proyecto-capstone-front.vercel.app
+
+Certificado HTTPS:
+  Emitido para: *.vercel.app
+  Emisor:       Google Trust Services WR1
+  Vigencia:     Oct 31 11:46:10 2026 GMT → Jan 29 11:46:09 2027 GMT
+  Conexión:     TLSv1.3 (certificado verificado por Node)
+
+Rutas (sin sesión):
+  /                HTTP 200 · text/html · 346 ms · (página de la app)
+  /login           HTTP 200 · text/html · 88 ms · (página de la app)
+  /vehiculos/1     HTTP 200 · text/html · 88 ms · (página de la app)
+  /api/auth/me     HTTP 401 · application/json · 307 ms · {"error":"Sesión no iniciada"}
+
+Región de la función de la API (cabecera x-vercel-id):
+  gru1:gru1:gru1::gru1::lvsmh-1795018760277-ba6802ac74ad
+
+Lectura: el sitio responde por HTTPS con certificado válido; /vehiculos/1 devuelve la app
+(no un 404); /api/* llega a la API por el mismo dominio y exige sesión (401); la función
+corre en gru1 (São Paulo), la misma región de la base de datos.
+Captura 01: pantalla de inicio de sesión del sitio publicado (viewport 1280x800).
