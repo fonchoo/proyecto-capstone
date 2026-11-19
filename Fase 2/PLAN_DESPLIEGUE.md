@@ -122,7 +122,7 @@ Verificación local antes de subir: `npm run build` en Front, y que la API siga 
 - [x] Guardar la URL pública en el README y en la tarjeta de Trello («TT - Levantamiento e implementación del proyecto»).
 - [x] Captura de la URL funcionando como evidencia: `Evidencias/Evidencia Grupal/Publicacion Vercel/`.
 - [x] Desactivar la Data API de Supabase: las tablas de `public` no tienen RLS y la API REST automática las expondría.
-- [ ] Cambiar las claves de los usuarios de prueba en la base de la nube, si se decidió.
+- [ ] Cambiar las claves de los usuarios de prueba en la base de la nube. **Decidido: después de la presentación de la Fase 2**, porque la demo usa esas cuentas. Hasta entonces, las claves del README dan acceso al sistema publicado.
 
 **Sistema publicado: https://proyecto-capstone-front.vercel.app**
 
