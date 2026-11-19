@@ -20,3 +20,5 @@ Lectura: el sitio responde por HTTPS con certificado válido; /vehiculos/1 devue
 (no un 404); /api/* llega a la API por el mismo dominio y exige sesión (401); la función
 corre en gru1 (São Paulo), la misma región de la base de datos.
 Captura 01: pantalla de inicio de sesión del sitio publicado (viewport 1280x800).
+Captura 03: Dashboard con sesión de administrador («Todas las compañías»), con los datos del seed después del
+db reset --linked del 18-11-2026 (B-1, R-1 y B-2).
