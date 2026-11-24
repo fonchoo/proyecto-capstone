@@ -1,0 +1,9 @@
+MTC_0490 - HU03-VAL02 · Patente guardada normalizada
+Entorno: local (Supabase en Docker). Fecha: 24-11-26, 10:37 a. m. (hora de Chile)
+Se escribió «gh-1234» en el formulario (captura 02). Registro en la base:
+ id_vehiculo | nomenclatura | tipo  | patente | marca  | ano_fabricacion | id_compania 
+-------------+--------------+-------+---------+--------+-----------------+-------------
+           6 | B-21         | Bomba | GH1234  | Scania |            2015 |           1
+(1 row)
+
+Resultado: la patente quedó como GH1234 (sin guion y en mayúsculas). Con «abcd-12» (tiene vocales) no se guardó (captura 01).

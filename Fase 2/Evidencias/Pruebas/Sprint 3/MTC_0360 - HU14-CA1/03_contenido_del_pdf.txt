@@ -1,0 +1,16 @@
+MTC_0360 - HU14-CA1 · Exportar el reporte de costos en PDF
+Entorno: local. Fecha: 24-11-26, 12:06 p. m. (hora de Chile). Sesión: administrador@gmail.com, «Todas las compañías».
+
+1. Reportería y Costos › Rango personalizado 01-09-2026 al 25-09-2026: la pantalla muestra $800.000,
+   2 mantenciones, B-1 $420.000 y B-2 $380.000 (captura 01).
+2. «Exportar PDF» descarga un archivo PDF (application/pdf, 6,8 KB), guardado como evidencia:
+   02_reporte-costos-2026-09-01_2026-09-25.pdf
+
+Contenido del PDF (2 páginas):
+  Página 1: «Reporteria y Costos de Mantenciones» · Periodo: 01-09-2026 al 25-09-2026 · Emitido: 24/nov/2026
+            Resumen: 2 mantenciones · Costo total: $800.000
+            Costo por vehiculo: B-1 $420.000 · B-2 $380.000 · Total $800.000
+  Página 2: Detalle de mantenciones: 20/sep/2026 B-2 preventiva Iveco Chile $380.000
+                                     10/sep/2026 B-1 preventiva Taller Maipú Diesel $420.000
+
+Resultado: el PDF contiene el período consultado y los mismos datos que muestra la pantalla, agrupados por vehículo.

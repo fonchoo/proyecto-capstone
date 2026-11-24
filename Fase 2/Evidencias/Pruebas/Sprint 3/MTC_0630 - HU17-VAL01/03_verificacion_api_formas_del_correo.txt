@@ -1,0 +1,17 @@
+MTC_0630 - HU17-VAL01 · Login con el correo en mayúsculas o con espacios
+Entorno: local (API en Docker, Supabase local). Fecha: 24-11-26, 10:35 a. m. (hora de Chile)
+
+En la pantalla (capturas 01 y 02): el campo de correo es de tipo email y el navegador quita por sí
+mismo los espacios al borde; el correo llega en mayúsculas (TENIENTE.C1@Sigmave.cl) y el login funciona.
+
+Directo a la API (POST /api/auth/login), para probar también los espacios y tabuladores:
+  correo "teniente.c1@sigmave.cl"
+    -> HTTP 200 · sesión de Teniente Primera (id 4, teniente.c1@sigmave.cl)
+  correo "TENIENTE.C1@SIGMAVE.CL"
+    -> HTTP 200 · sesión de Teniente Primera (id 4, teniente.c1@sigmave.cl)
+  correo "  TENIENTE.C1@Sigmave.cl "
+    -> HTTP 200 · sesión de Teniente Primera (id 4, teniente.c1@sigmave.cl)
+  correo "\tteniente.c1@sigmave.cl  "
+    -> HTTP 200 · sesión de Teniente Primera (id 4, teniente.c1@sigmave.cl)
+
+Resultado: las cuatro formas inician sesión con la misma cuenta; el correo se normaliza a minúsculas y sin espacios.

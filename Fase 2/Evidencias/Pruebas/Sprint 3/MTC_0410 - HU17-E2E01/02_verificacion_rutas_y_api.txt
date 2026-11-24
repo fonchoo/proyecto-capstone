@@ -1,0 +1,48 @@
+MTC_0410 - HU17-E2E01 · Flujo de autenticación y permisos (bombero.c1)
+Entorno: local (front en Vite, API en Docker, Supabase local). Fecha: 24-11-26, 10:18 a. m. (hora de Chile)
+Usuario: bombero.c1@sigmave.cl (rol bombero, Primera Compañía), cuenta activa.
+
+== 1. Inicio de sesión (captura 01) ==
+Login correcto -> /dashboard. Menú visible: Dashboard, Alertas (lo que corresponde al rol bombero).
+No aparecen Fallas, Reportería y Costos ni Usuarios.
+
+== 2. Acceso por URL a secciones de otros roles (con la sesión del bombero) ==
+http://localhost:5173/usuarios  -> redirige a /dashboard
+http://localhost:5173/reportes  -> redirige a /dashboard
+http://localhost:5173/fallas    -> redirige a /dashboard
+
+== 3. Acceso directo a la API con la sesión del bombero (la seguridad real está en la API) ==
+GET /api/auth/me  (sesión activa)
+  -> HTTP 200 Bombero Primera · bombero · Primera Compañía
+
+GET /api/vehiculos  (permitido: vehículos de su compañía)
+  -> HTTP 200 B-1 (compañía 1), R-1 (compañía 1), B-9 (compañía 1)
+
+GET /api/vehiculos/3  (B-2 es de la Segunda Compañía)
+  -> HTTP 404 {"error":"Vehículo no encontrado"}
+
+GET /api/usuarios  (gestión de usuarios)
+  -> HTTP 403 {"error":"No tienes permisos para esta acción"}
+
+POST /api/usuarios  (intento de crear un administrador)
+  -> HTTP 403 {"error":"No tienes permisos para esta acción"}
+
+PATCH /api/usuarios/4/desactivar  (desactivar al teniente)
+  -> HTTP 403 {"error":"No tienes permisos para esta acción"}
+
+PATCH /api/fallas/1/derivar  (derivar una falla: Teniente Tercero o superior)
+  -> HTTP 403 {"error":"No tienes permisos para esta acción"}
+
+POST /api/mantenimientos  (registrar mantención)
+  -> HTTP 403 {"error":"No tienes permisos para esta acción"}
+
+== 4. Cierre de sesión (captura 03) y acceso posterior (captura 04) ==
+"Cerrar sesión" desde el menú de usuario -> /login
+GET /api/auth/me    -> HTTP 401 {"error":"Sesión no iniciada"}
+GET /api/vehiculos  -> HTTP 401 {"error":"Sesión no iniciada"}
+http://localhost:5173/dashboard    -> redirige a /login
+http://localhost:5173/vehiculos/1  -> redirige a /login
+
+Resultado: el usuario inicia sesión y accede únicamente a las funciones de su rol, tanto en la
+interfaz como en la API; al cerrar sesión pierde el acceso a todas las secciones protegidas
+(HU17-CA1, CA3, CA6 y CA7).

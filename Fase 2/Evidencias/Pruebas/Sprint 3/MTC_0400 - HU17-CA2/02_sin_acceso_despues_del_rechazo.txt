@@ -1,0 +1,9 @@
+MTC_0400 - HU17-CA2 · El intento con credenciales inválidas no da acceso
+Entorno: local (front en Vite, API en Docker). Fecha: 24-11-26, 10:15 a. m. (hora de Chile)
+Cuenta: teniente.c1@sigmave.cl con una contraseña incorrecta (captura 01).
+
+Después del intento rechazado, en el mismo navegador:
+- GET /api/auth/me  -> HTTP 401 {"error":"Sesión no iniciada"}   (no quedó ninguna sesión abierta)
+- Abrir http://localhost:5173/dashboard  -> redirige a /login   (no permite el acceso)
+
+Resultado: el sistema muestra "Credenciales inválidas", permanece en /login y no entrega sesión.

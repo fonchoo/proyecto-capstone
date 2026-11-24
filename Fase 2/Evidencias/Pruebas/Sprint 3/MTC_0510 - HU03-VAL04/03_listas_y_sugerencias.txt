@@ -1,0 +1,16 @@
+MTC_0510 - HU03-VAL04 · Tipo y marca desde listas, modelos sugeridos
+Entorno: local. Fecha: 24-11-26, 10:37 a. m. (hora de Chile). Sesión: inspector.c1.
+
+Opciones del formulario «Registrar vehículo» (leídas de la página):
+  Tipo (7):   Bomba, Rescate, Escala, Cisterna, Forestal, Materiales peligrosos, Otro
+  Marca (19): Chevrolet, E-One, Ford, Freightliner, Hino, International, Isuzu, Iveco, Magirus, MAN,
+              Mercedes-Benz, Mitsubishi, Nissan, Pierce, Renault, Scania, Spartan, Toyota, Volvo
+  Al elegir Mercedes-Benz, el campo Modelo sugiere (datalist): Atego, Axor, Actros, Arocs, Econic, Sprinter, Unimog
+  (el cuadro de sugerencias del navegador no sale en la captura; la lista se leyó de la página).
+
+Origen del catálogo: GET /api/config (lo sirve la API desde src/catalogoVehiculos.js):
+  vehiculos.tipos: 7 · vehiculos.marcas: 19 · modelos de Mercedes-Benz: Atego, Axor, Actros, Arocs, Econic, Sprinter, Unimog
+
+Vehículo registrado: B-22 · Bomba · Mercedes-Benz · modelo «Atego 1726» · patente HJKL34 · año 2019
+
+Resultado: tipo y marca solo desde listas; el modelo se sugiere según la marca y acepta un valor fuera de la lista («Atego 1726»).

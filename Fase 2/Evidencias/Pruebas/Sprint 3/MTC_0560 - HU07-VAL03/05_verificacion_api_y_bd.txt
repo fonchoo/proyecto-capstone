@@ -1,0 +1,20 @@
+MTC_0560 - HU07-VAL03 · Montos de repuestos y mano de obra
+Entorno: local. Fecha: 24-11-26, 10:40 a. m. (hora de Chile). Sesión: inspector.c1. Vehículo: B-1.
+
+Formulario «Registrar Mantención» (con fecha de salida): repuestos 1000.5 y mano de obra 200000000 rechazados (capturas 01 y 02).
+Historial › «Finalizar mantención» (mantención N° 4, en proceso): repuestos 10.5 rechazado (captura 03); con $0 y $0 se acepta (captura 04).
+Nota: el plan pide una mantención en proceso de B-1; el seed no la trae, así que se creó en MTC_0550 (N° 4, 40.000 km).
+
+La API aplica la misma regla sin pasar por el formulario:
+   POST /api/mantenimientos repuestos=1000.5 mano_obra=0 -> HTTP 400 · {"costo_repuestos":"Debe ser un monto en pesos, sin decimales, entre $0 y $100.000.000"}
+   POST /api/mantenimientos repuestos=0 mano_obra=200000000 -> HTTP 400 · {"mano_obra":"Debe ser un monto en pesos, sin decimales, entre $0 y $100.000.000"}
+   POST /api/mantenimientos repuestos=-1 mano_obra=0 -> HTTP 400 · {"costo_repuestos":"Debe ser un monto en pesos, sin decimales, entre $0 y $100.000.000"}
+   (No se repitió por la API la finalización con 10.5: la N° 4 ya estaba finalizada y la API responde 409 «La mantención ya está finalizada» antes de revisar montos. La regla al finalizar queda probada en la captura 03.)
+
+Mantención N° 4 en la base después de finalizarla con $0:
+ id_mantencion | estado_mantencion | fecha_salida | costo_total | mano_obra 
+---------------+-------------------+--------------+-------------+-----------
+             4 | finalizada        | 2026-11-21   |        0.00 |      0.00
+(1 row)
+
+Resultado: los montos deben ser pesos enteros entre $0 y $100.000.000, al registrar y al finalizar; $0 se acepta.

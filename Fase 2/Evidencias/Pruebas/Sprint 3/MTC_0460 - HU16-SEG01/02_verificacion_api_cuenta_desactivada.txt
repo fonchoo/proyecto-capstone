@@ -1,0 +1,53 @@
+MTC_0460 - HU16-SEG01 · Bloqueo de cuenta desactivada
+Entorno: local (API en Docker, Supabase local). Fecha: 24-11-26, 10:14 a. m. (hora de Chile)
+Cuenta: bombero.c2@sigmave.cl (Bombero Segunda), desactivada en MTC_0380.
+
+== 1. La cuenta desactivada no se autentica ==
+1a. Login con la contraseña CORRECTA
+  -> HTTP 403 {"error":"Tu cuenta está desactivada. Contacta al administrador de SIGMAVE."}  [Set-Cookie: no]
+
+1b. Login con el correo en mayúsculas y espacios (otra forma de escribirlo)
+  -> HTTP 403 {"error":"Tu cuenta está desactivada. Contacta al administrador de SIGMAVE."}  [Set-Cookie: no]
+
+1c. Login con una contraseña INCORRECTA: misma respuesta genérica que cualquier cuenta (no revela que está desactivada)
+  -> HTTP 401 {"error":"Credenciales inválidas"}  [Set-Cookie: no]
+
+== 2. Una sesión abierta ANTES de la desactivación deja de servir ==
+2a. Administrador reactiva la cuenta (preparación)
+  -> HTTP 200 {"id_usuario":6,"rut":"20000004-8","nombre_completo":"Bombero Segunda","email":"bombero.c2@sigmave.cl","activo":true,"id_rol":1,"id_compania":2}  [Set-Cookie: no]
+
+2b. Bombero Segunda inicia sesión
+  -> HTTP 200 (sesión abierta)
+
+2c. Con la sesión abierta consulta sus vehículos
+  -> HTTP 200 1 vehículos  [Set-Cookie: no]
+
+2d. Administrador desactiva la cuenta
+  -> HTTP 200 {"id_usuario":6,"rut":"20000004-8","nombre_completo":"Bombero Segunda","email":"bombero.c2@sigmave.cl","activo":false,"id_rol":1,"id_compania":2}  [Set-Cookie: no]
+
+2e. La MISMA sesión intenta GET /api/auth/me
+  -> HTTP 401 {"error":"Sesión expirada o inválida"}  [Set-Cookie: sí]
+
+2f. La MISMA sesión intenta GET /api/vehiculos
+  -> HTTP 401 {"error":"Sesión expirada o inválida"}  [Set-Cookie: sí]
+
+2g. La MISMA sesión intenta reportar una falla (POST /api/fallas)
+  -> HTTP 401 {"error":"Sesión expirada o inválida"}  [Set-Cookie: sí]
+
+2h. Nuevo login con la contraseña correcta
+  -> HTTP 403 {"error":"Tu cuenta está desactivada. Contacta al administrador de SIGMAVE."}  [Set-Cookie: no]
+
+Estado final: la cuenta queda desactivada (como al inicio).
+
+Nota: en 2e-2g el "Set-Cookie: sí" es la API BORRANDO la cookie de sesión (cerrarSesion), no creando una nueva.
+
+== 3. La cuenta desactivada no recibe notificaciones ==
+Destinatarios que tendría hoy una falla reportada en B-2 (Segunda Compañía) por teniente.c2,
+con el mismo filtro que usa src/notificaciones.js (sin el reportante ni administradores, y solo cuentas activas):
+          email          | activo | recibe_aviso 
+-------------------------+--------+--------------
+ bombero.c2@sigmave.cl   | f      | f
+ inspector.c2@sigmave.cl | t      | t
+(2 rows)
+
+Resultado: bombero.c2 (inactiva) queda fuera; inspector.c2 (activa) recibe el aviso.

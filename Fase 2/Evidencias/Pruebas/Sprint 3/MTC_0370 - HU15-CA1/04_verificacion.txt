@@ -1,0 +1,18 @@
+MTC_0370 - HU15-CA1 · Crear cuenta de usuario con rol asignado
+Entorno: local. Fecha: 24-11-26, 12:06 p. m. (hora de Chile).
+
+1. administrador@gmail.com › Gestión de Usuarios › «Agregar Usuario»: Pedro Soto, RUT 15.432.678-2,
+   pedro.soto@sigmave.cl, rol Teniente Tercero, Primera Compañía (captura 01).
+2. «Usuario creado correctamente» y la cuenta aparece en el listado (de 9 a 10 usuarios) (captura 02).
+3. Pedro Soto inicia sesión con su correo y contraseña (captura 03):
+   sesión: Pedro Soto · teniente_tercero · Primera Compañía
+   menú: Dashboard, Fallas, Alertas (lo del Teniente Tercero; sin Reportería ni Usuarios)
+   GET /api/usuarios con su sesión -> 403 (no tiene funciones de administrador)
+
+Registro en la base:
+ id_usuario |    rut     | nombre_completo |         email         |    nombre_rol    |     compania     | activo 
+------------+------------+-----------------+-----------------------+------------------+------------------+--------
+         12 | 15432678-2 | Pedro Soto      | pedro.soto@sigmave.cl | teniente_tercero | Primera Compañía | t
+(1 row)
+
+Resultado: la cuenta se crea con el rol elegido y el usuario accede solo a las funciones de ese rol.

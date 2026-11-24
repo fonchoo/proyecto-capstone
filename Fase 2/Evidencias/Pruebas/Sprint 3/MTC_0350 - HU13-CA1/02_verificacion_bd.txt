@@ -1,0 +1,23 @@
+MTC_0350 - HU13-CA1 · Verificación del reporte contra la base de datos
+Entorno: local (Supabase en Docker, seed). Fecha: 24-11-26, 10:07 a. m. (hora de Chile)
+Usuario: administrador@gmail.com, selector "Todas las compañías". Rango: 01-09-2026 al 25-09-2026.
+
+Consulta: suma de costo_total por vehículo con fecha_ingreso dentro del rango
+ vehiculo | mantenciones | costo_total 
+----------+--------------+-------------
+ B-1      |            1 |      420000
+ B-2      |            1 |      380000
+(2 rows)
+
+ total_periodo 
+---------------
+        800000
+(1 row)
+
+ nomenclatura | fecha_ingreso | costo_total 
+--------------+---------------+-------------
+ R-1          | 2026-09-28    |      850000
+(1 row)
+
+Resultado: la pantalla muestra B-1 $420.000 y B-2 $380.000, total $800.000 (2 mantenciones, 2 vehículos), igual que la base.
+R-1 (ingreso 28-09-2026, $850.000) queda fuera del rango, como corresponde.

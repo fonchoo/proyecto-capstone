@@ -1,0 +1,15 @@
+MTC_0570 - HU07-VAL04 · Largo del taller y del detalle del trabajo
+Entorno: local. Fecha: 24-11-26, 10:39 a. m. (hora de Chile). Sesión: inspector.c1. Vehículo: B-1.
+
+1. Con taller «TC» y detalle «aceite», el formulario muestra (captura 01):
+   Detalle: «Debe tener al menos 10 caracteres» · Taller: «Debe tener al menos 3 caracteres»
+
+2. Límites máximos del formulario (atributo maxlength):
+   Taller: 100 · Detalle: 2000
+   Se tecleó un taller de 112 caracteres: el campo quedó con 100.
+
+3. La API aplica las mismas reglas sin pasar por el formulario (POST /api/mantenimientos):
+   taller TC, detalle aceite -> HTTP 400 · {"proveedor":"Debe tener al menos 3 caracteres","detalle_trabajo":"Debe tener al menos 10 caracteres"}
+   taller de 101 y detalle de 2001 caracteres -> HTTP 400 · {"proveedor":"Máximo 100 caracteres","detalle_trabajo":"Máximo 2000 caracteres"}
+
+Resultado: el taller exige entre 3 y 100 caracteres y el detalle entre 10 y 2000, en el formulario y en la API.

@@ -1,0 +1,11 @@
+MTC_0580 - HU15-VAL01 · RUT, nombre, correo y contraseña al crear un usuario
+Entorno: local. Fecha: 24-11-26, 10:41 a. m. (hora de Chile). Sesión: admin@admin.cl.
+
+Datos escritos en el formulario: RUT «7.654.321-6», correo «Maria.Prueba@Sigmave.cl» (capturas 02 y 03).
+Registro guardado en la base:
+ id_usuario |    rut    | nombre_completo |          email          | nombre_rol | id_compania | activo | password_hash 
+------------+-----------+-----------------+-------------------------+------------+-------------+--------+---------------
+          9 | 7654321-6 | María O'Higgins | maria.prueba@sigmave.cl | bombero    |           1 | t      | $2b$…
+(1 row)
+
+Resultado: el RUT quedó normalizado (7654321-6), el correo en minúsculas y la contraseña como hash bcrypt ($2a/$2b…), no en texto.

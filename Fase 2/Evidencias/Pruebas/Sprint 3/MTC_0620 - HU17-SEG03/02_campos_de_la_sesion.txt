@@ -1,0 +1,16 @@
+MTC_0620 - HU17-SEG03 · La sesión no expone el RUT
+Entorno: local (API en Docker, Supabase local). Fecha: 24-11-26, 10:35 a. m. (hora de Chile)
+Usuario: bombero.c1@sigmave.cl
+
+POST /api/auth/login (respuesta al iniciar sesión)
+  campos: id_usuario, nombre_completo, email, id_rol, nombre_rol, id_compania, nombre_compania
+  ¿incluye rut? no | ¿incluye password? no
+
+GET /api/auth/me (la que abre el navegador, captura 01)
+  campos: id_usuario, nombre_completo, email, id_rol, nombre_rol, id_compania, nombre_compania
+  ¿incluye rut? no | ¿incluye password? no
+
+Como contraste, el RUT de bombero.c1 sí existe en la base (solo lo ve el administrador en /api/usuarios):
+ rut en la base: 20000001-3
+
+Resultado: la sesión entrega id_usuario, nombre_completo, email, id_rol, nombre_rol, id_compania y nombre_compania; sin rut ni password.

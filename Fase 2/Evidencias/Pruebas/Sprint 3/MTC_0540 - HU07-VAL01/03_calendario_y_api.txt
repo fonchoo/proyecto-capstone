@@ -1,0 +1,13 @@
+MTC_0540 - HU07-VAL01 · Fecha de ingreso de la mantención
+Entorno: local. Fecha: 24-11-26, 10:38 a. m. (hora de Chile). Sesión: inspector.c1. Vehículo: B-1 (año 2019).
+
+1. El calendario no deja elegir días futuros: el campo «Fecha de ingreso» es type=date con max=2026-11-24 (hoy).
+   (Para el paso 2 se escribió la fecha de mañana a mano; el formulario la rechazó: captura 01.)
+
+2. La API aplica la misma regla aunque se la llame sin el formulario (POST /api/mantenimientos):
+   fecha_ingreso 2026-11-25 -> HTTP 400 · {"fecha_ingreso":"La fecha de ingreso no puede ser futura"}
+   fecha_ingreso 2018-06-01 -> HTTP 400 · {"fecha_ingreso":"La fecha de ingreso no puede ser anterior al año de fabricación del vehículo (2019)"}
+
+Resultado: una fecha futura y una anterior al año de fabricación se rechazan en el formulario y en la API; no se registró ninguna mantención.
+    mantenciones de B-1 en la base: 1
+

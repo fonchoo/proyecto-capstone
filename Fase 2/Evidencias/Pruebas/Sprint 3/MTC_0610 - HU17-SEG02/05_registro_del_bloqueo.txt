@@ -1,0 +1,31 @@
+MTC_0610 - HU17-SEG02 · Bloqueo después de 5 intentos fallidos
+Entorno: local (front en Vite, API en Docker, Supabase local). Fecha: 24-11-2026 (hora de Chile).
+
+Paso 1 (pantalla de login, bombero.c2@sigmave.cl con la contraseña incorrecta «mala1234»):
+  intentos 1 a 4 -> «Credenciales inválidas» (captura 01, intento 4)
+  intento 5      -> «Demasiados intentos fallidos. Vuelve a intentarlo en 15 minutos.» (captura 02)
+  Registro en la tabla intento_login: 5 fallidos, último fallo 10:34:06, bloqueado hasta 10:49:06.
+
+Paso 2 (contraseña CORRECTA durante el bloqueo):
+  -> «Demasiados intentos fallidos. Vuelve a intentarlo en 15 minutos.» y sigue en /login (captura 03)
+
+Paso 3 (pasados los 15 minutos, contraseña correcta):
+  10:52 (bloqueo vencido a las 10:49:06) -> entra al Dashboard como Bombero Segunda (captura 04). Tras el ingreso, intento_login de ese correo:
+ filas_de_bombero_c2 
+---------------------
+                   0
+(1 row)
+
+  (el login correcto borra los fallos: la cuenta parte de cero)
+
+Paso 4 (correo no registrado noexiste@sigmave.cl, contraseña «mala1234», por la API):
+  intento 1 -> HTTP 401 {"error":"Credenciales inválidas"}
+  intento 2 -> HTTP 401 {"error":"Credenciales inválidas"}
+  intento 3 -> HTTP 401 {"error":"Credenciales inválidas"}
+  intento 4 -> HTTP 401 {"error":"Credenciales inválidas"}
+  intento 5 -> HTTP 429 {"error":"Demasiados intentos fallidos. Vuelve a intentarlo en 15 minutos."}
+  intento 6 -> HTTP 429 {"error":"Demasiados intentos fallidos. Vuelve a intentarlo en 15 minutos."}
+  -> se bloquea igual que una cuenta real: el bloqueo no revela si el correo existe.
+
+Resultado: 5 contraseñas incorrectas seguidas bloquean el correo 15 minutos, incluso con la contraseña correcta;
+al vencer el plazo se puede entrar; un correo no registrado se bloquea igual, sin revelar si existe.

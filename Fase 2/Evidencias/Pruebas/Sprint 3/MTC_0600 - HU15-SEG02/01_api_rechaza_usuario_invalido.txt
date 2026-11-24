@@ -1,0 +1,30 @@
+MTC_0600 - HU15-SEG02 · La API rechaza datos de usuario inválidos sin pasar por el formulario
+Entorno: local (API en Docker, Supabase local). Fecha: 24-11-26, 10:35 a. m. (hora de Chile)
+Sesión: admin@admin.cl (cookie de sesión enviada a mano, sin pasar por el formulario).
+
+1. POST /api/usuarios con el body:
+    {
+      "rut": "12345678-0",
+      "nombre_completo": "J4",
+      "email": "x@y",
+      "password": "abc",
+      "id_rol": 99,
+      "id_compania": 1
+    }
+
+2. Respuesta: HTTP 400
+    {
+      "error": "El RUT no es válido (revisa el dígito verificador). Debe tener al menos 3 caracteres. El correo no tiene un formato válido. La contraseña debe tener al menos 8 caracteres. Rol inválido",
+      "campos": {
+        "rut": "El RUT no es válido (revisa el dígito verificador)",
+        "nombre_completo": "Debe tener al menos 3 caracteres",
+        "email": "El correo no tiene un formato válido",
+        "password": "La contraseña debe tener al menos 8 caracteres",
+        "id_rol": "Rol inválido"
+      }
+    }
+
+   Campos con error: rut, nombre_completo, email, password, id_rol
+
+3. ¿Se creó el registro? GET /api/usuarios: 8 usuarios antes y 8 usuarios después -> no se creó.
+Resultado: 400 con un mensaje bajo cada campo inválido (rut, nombre_completo, email, password e id_rol); el usuario no se crea.

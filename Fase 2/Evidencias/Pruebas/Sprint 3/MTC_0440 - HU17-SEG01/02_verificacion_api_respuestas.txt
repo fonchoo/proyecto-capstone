@@ -1,0 +1,26 @@
+MTC_0440 - HU17-SEG01 · Acceso con credenciales inválidas
+Entorno: local (API en Docker, Supabase local). Fecha: 24-11-26, 10:16 a. m. (hora de Chile)
+
+A. Correo EXISTENTE (teniente.c1) + contraseña incorrecta
+  -> HTTP 401 {"error":"Credenciales inválidas"}  [Set-Cookie: no] [283 ms]
+
+B. Correo que NO EXISTE + contraseña cualquiera
+  -> HTTP 401 {"error":"Credenciales inválidas"}  [Set-Cookie: no] [235 ms]
+
+C. Correo existente + contraseña vacía
+  -> HTTP 400 {"error":"Se requieren \"email\" y \"password\""}  [Set-Cookie: no] [3 ms]
+
+D. Intento de inyección SQL en el correo
+  -> HTTP 401 {"error":"Credenciales inválidas"}  [Set-Cookie: no] [6 ms]
+
+Comparación A vs B (¿se puede saber si un correo está registrado?):
+  mismo código HTTP: sí | mismo mensaje: sí | tiempos: 283 ms vs 235 ms
+  (si el correo no existe, la API compara igual contra un hash de relleno, así ambas respuestas tardan lo mismo)
+
+Encabezados de la respuesta A (ninguno trae datos de la cuenta ni de la sesión):
+  connection, content-length, content-type, date, etag, keep-alive, x-powered-by
+  X-Powered-By presente: SÍ (revela Express)
+
+Resultado: ninguna respuesta entrega sesión ni datos de la cuenta; el mensaje es el mismo exista o no el correo.
+Observación (mejora, no bloquea el caso): el encabezado X-Powered-By revela que la API usa Express. Se quita con app.disable("x-powered-by") en src/app.js.
+Corregido el 24-11-2026 en el commit 148f958 (app.disable("x-powered-by")), publicado en Vercel: la API ya no envía X-Powered-By.

@@ -1,0 +1,32 @@
+MTC_0450 - HU15-SEG01 · Restricción de creación de usuarios por rol
+Entorno: local (front en Vite, API en Docker). Fecha: 24-11-26, 12:07 p. m. (hora de Chile).
+Usuario: inspector.c1@sigmave.cl (Inspector de Material Mayor: el rol con más permisos después del administrador).
+
+1. Menú del inspector: Dashboard, Fallas, Alertas, Reportería y Costos. No aparece «Usuarios» (captura 01).
+2. Abrir http://localhost:5173/usuarios directamente -> redirige a /dashboard.
+3. Llamadas directas a la API con la sesión del inspector:
+
+GET /api/usuarios  (ver el listado de usuarios)
+  -> HTTP 403 {"error":"No tienes permisos para esta acción"}
+
+POST /api/usuarios  (crear una cuenta, incluso de administrador)
+  -> HTTP 403 {"error":"No tienes permisos para esta acción"}
+
+PUT /api/usuarios/3  (subirle el rol a un bombero)
+  -> HTTP 403 {"error":"No tienes permisos para esta acción"}
+
+PATCH /api/usuarios/3/desactivar  (desactivar una cuenta)
+  -> HTTP 403 {"error":"No tienes permisos para esta acción"}
+
+En la base no se creó la cuenta y bombero.c1 sigue igual:
+ cuentas_intento 
+-----------------
+               0
+(1 row)
+
+         email         | nombre_rol | activo 
+-----------------------+------------+--------
+ bombero.c1@sigmave.cl | bombero    | t
+(1 row)
+
+Resultado: solo el administrador puede crear, editar o desactivar cuentas; la restricción la aplica la API, no solo el menú.

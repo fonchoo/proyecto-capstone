@@ -1,0 +1,18 @@
+MTC_0500 - HU03-VAL03 · Nomenclatura única dentro de la compañía
+Entorno: local. Fecha: 24-11-26, 10:41 a. m. (hora de Chile).
+
+Paso 1 (inspector.c1): «Bomba 1» -> «Usa la sigla y el número del carro, por ejemplo B-1 o BX-2» (captura 01).
+Paso 2 (inspector.c1): «b1» en la Primera Compañía -> «Esta compañía ya tiene un vehículo con esa nomenclatura» (captura 02).
+Paso 3 (admin@admin.cl): «B-1» en la Segunda Compañía -> «Vehículo registrado correctamente» (captura 03).
+
+Vehículos B-1 en la base (uno por compañía):
+ id_vehiculo | nomenclatura |     compania     | patente 
+-------------+--------------+------------------+---------
+           1 | B-1          | Primera Compañía | KLHT21
+           9 | B-1          | Segunda Compañía | GHJK46
+(2 rows)
+
+Restricción en la base que lo garantiza:
+   uq_vehiculo_compania_nomenclatura: UNIQUE (id_compania, nomenclatura)
+
+Resultado: la nomenclatura se valida en formato, se normaliza (b1 -> B-1) y no se repite en una compañía; sí puede repetirse en otra.

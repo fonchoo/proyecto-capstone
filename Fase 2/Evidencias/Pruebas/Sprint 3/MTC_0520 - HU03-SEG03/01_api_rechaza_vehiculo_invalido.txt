@@ -1,0 +1,30 @@
+MTC_0520 - HU03-SEG03 · La API rechaza un vehículo inválido sin pasar por el formulario
+Entorno: local (API en Docker, Supabase local). Fecha: 24-11-26, 10:35 a. m. (hora de Chile)
+Sesión: inspector.c1@sigmave.cl (cookie de sesión enviada a mano, sin pasar por el formulario).
+
+1. POST /api/vehiculos con el body:
+    {
+      "nomenclatura": "Bomba 1",
+      "tipo": "Tanque",
+      "patente": "ABCD12",
+      "marca": "Mercedez",
+      "ano_fabricacion": 1940,
+      "id_compania": 1
+    }
+
+2. Respuesta: HTTP 400
+    {
+      "error": "Usa la sigla y el número del carro, por ejemplo B-1 o BX-2. Elige un tipo de la lista. La patente debe ser de 4 letras y 2 números (KLHT-21) o de 2 letras y 4 números (AB-1234). Elige una marca de la lista. Año inválido (1950 - 2027)",
+      "campos": {
+        "nomenclatura": "Usa la sigla y el número del carro, por ejemplo B-1 o BX-2",
+        "tipo": "Elige un tipo de la lista",
+        "patente": "La patente debe ser de 4 letras y 2 números (KLHT-21) o de 2 letras y 4 números (AB-1234)",
+        "marca": "Elige una marca de la lista",
+        "ano_fabricacion": "Año inválido (1950 - 2027)"
+      }
+    }
+
+   Campos con error: nomenclatura, tipo, patente, marca, ano_fabricacion
+
+3. ¿Se creó el registro? GET /api/vehiculos: 3 vehículos antes y 3 vehículos después -> no se creó.
+Resultado: 400 con un mensaje bajo cada campo inválido (nomenclatura, tipo, patente, marca y año); el vehículo no se crea.
