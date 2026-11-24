@@ -1,0 +1,346 @@
+{
+  "base_local_7_vehiculos": {
+    "fecha": "2026-11-24T15:20:57.202Z",
+    "endpoints": [
+      "/auth/me",
+      "/config",
+      "/companias",
+      "/vehiculos",
+      "/mantenimientos",
+      "/fallas?estado=pendiente,derivado",
+      "/notificaciones"
+    ],
+    "cuentas": [
+      "administrador@gmail.com",
+      "inspector.c1@sigmave.cl",
+      "teniente.c1@sigmave.cl",
+      "bombero.c1@sigmave.cl"
+    ],
+    "niveles": [
+      {
+        "usuarios": 10,
+        "segundos": 30,
+        "cargasDashboard": 2724,
+        "solicitudes": 19068,
+        "solicitudesPorSegundo": 633,
+        "erroresServidorORed": 0,
+        "codigos": {
+          "200": 19068
+        },
+        "dashboardMs": {
+          "n": 2724,
+          "p50": 106,
+          "p95": 149,
+          "p99": 175,
+          "max": 506
+        },
+        "endpointMs": {
+          "/auth/me": {
+            "n": 2724,
+            "p50": 54,
+            "p95": 79,
+            "p99": 100,
+            "max": 344
+          },
+          "/config": {
+            "n": 2724,
+            "p50": 55,
+            "p95": 80,
+            "p99": 104,
+            "max": 375
+          },
+          "/companias": {
+            "n": 2724,
+            "p50": 99,
+            "p95": 138,
+            "p99": 166,
+            "max": 417
+          },
+          "/vehiculos": {
+            "n": 2724,
+            "p50": 100,
+            "p95": 141,
+            "p99": 171,
+            "max": 450
+          },
+          "/mantenimientos": {
+            "n": 2724,
+            "p50": 101,
+            "p95": 142,
+            "p99": 169,
+            "max": 477
+          },
+          "/fallas?estado=pendiente,derivado": {
+            "n": 2724,
+            "p50": 102,
+            "p95": 144,
+            "p99": 171,
+            "max": 466
+          },
+          "/notificaciones": {
+            "n": 2724,
+            "p50": 102,
+            "p95": 144,
+            "p99": 174,
+            "max": 506
+          }
+        },
+        "docker": [
+          "capstone-api-server-1;153.04%;169.4MiB / 7.612GiB\nsupabase_db_sigmave;84.91%;151MiB / 7.612GiB",
+          "capstone-api-server-1;116.09%;197.2MiB / 7.612GiB\nsupabase_db_sigmave;84.55%;151.7MiB / 7.612GiB",
+          "capstone-api-server-1;118.31%;200.2MiB / 7.612GiB\nsupabase_db_sigmave;87.30%;151.7MiB / 7.612GiB",
+          "capstone-api-server-1;120.46%;199.8MiB / 7.612GiB\nsupabase_db_sigmave;84.40%;151.6MiB / 7.612GiB",
+          "capstone-api-server-1;118.57%;200.5MiB / 7.612GiB\nsupabase_db_sigmave;92.65%;151.5MiB / 7.612GiB"
+        ]
+      },
+      {
+        "usuarios": 25,
+        "segundos": 30,
+        "cargasDashboard": 2152,
+        "solicitudes": 15064,
+        "solicitudesPorSegundo": 498,
+        "erroresServidorORed": 0,
+        "codigos": {
+          "200": 15064
+        },
+        "dashboardMs": {
+          "n": 2152,
+          "p50": 341,
+          "p95": 442,
+          "p99": 645,
+          "max": 732
+        },
+        "endpointMs": {
+          "/auth/me": {
+            "n": 2152,
+            "p50": 172,
+            "p95": 239,
+            "p99": 601,
+            "max": 704
+          },
+          "/config": {
+            "n": 2152,
+            "p50": 173,
+            "p95": 242,
+            "p99": 600,
+            "max": 695
+          },
+          "/companias": {
+            "n": 2152,
+            "p50": 331,
+            "p95": 424,
+            "p99": 607,
+            "max": 730
+          },
+          "/vehiculos": {
+            "n": 2152,
+            "p50": 334,
+            "p95": 430,
+            "p99": 612,
+            "max": 730
+          },
+          "/mantenimientos": {
+            "n": 2152,
+            "p50": 336,
+            "p95": 432,
+            "p99": 611,
+            "max": 729
+          },
+          "/fallas?estado=pendiente,derivado": {
+            "n": 2152,
+            "p50": 335,
+            "p95": 436,
+            "p99": 622,
+            "max": 730
+          },
+          "/notificaciones": {
+            "n": 2152,
+            "p50": 337,
+            "p95": 435,
+            "p99": 634,
+            "max": 729
+          }
+        },
+        "docker": [
+          "capstone-api-server-1;118.79%;201.2MiB / 7.612GiB\nsupabase_db_sigmave;81.38%;152.2MiB / 7.612GiB",
+          "capstone-api-server-1;121.02%;202.3MiB / 7.612GiB\nsupabase_db_sigmave;83.46%;151.8MiB / 7.612GiB",
+          "capstone-api-server-1;115.15%;201.5MiB / 7.612GiB\nsupabase_db_sigmave;77.67%;151.6MiB / 7.612GiB",
+          "capstone-api-server-1;120.11%;205MiB / 7.612GiB\nsupabase_db_sigmave;74.91%;151.6MiB / 7.612GiB",
+          "capstone-api-server-1;120.47%;206.5MiB / 7.612GiB\nsupabase_db_sigmave;71.60%;151.6MiB / 7.612GiB"
+        ]
+      },
+      {
+        "usuarios": 50,
+        "segundos": 30,
+        "cargasDashboard": 2386,
+        "solicitudes": 16702,
+        "solicitudesPorSegundo": 550,
+        "erroresServidorORed": 0,
+        "codigos": {
+          "200": 16702
+        },
+        "dashboardMs": {
+          "n": 2386,
+          "p50": 609,
+          "p95": 831,
+          "p99": 1462,
+          "max": 2308
+        },
+        "endpointMs": {
+          "/auth/me": {
+            "n": 2386,
+            "p50": 306,
+            "p95": 432,
+            "p99": 1203,
+            "max": 1962
+          },
+          "/config": {
+            "n": 2386,
+            "p50": 307,
+            "p95": 434,
+            "p99": 1224,
+            "max": 1971
+          },
+          "/companias": {
+            "n": 2386,
+            "p50": 600,
+            "p95": 819,
+            "p99": 1396,
+            "max": 2265
+          },
+          "/vehiculos": {
+            "n": 2386,
+            "p50": 603,
+            "p95": 820,
+            "p99": 1412,
+            "max": 2260
+          },
+          "/mantenimientos": {
+            "n": 2386,
+            "p50": 603,
+            "p95": 819,
+            "p99": 1442,
+            "max": 2286
+          },
+          "/fallas?estado=pendiente,derivado": {
+            "n": 2386,
+            "p50": 605,
+            "p95": 822,
+            "p99": 1447,
+            "max": 2277
+          },
+          "/notificaciones": {
+            "n": 2386,
+            "p50": 606,
+            "p95": 826,
+            "p99": 1461,
+            "max": 2306
+          }
+        },
+        "docker": [
+          "capstone-api-server-1;121.10%;210.7MiB / 7.612GiB\nsupabase_db_sigmave;79.96%;152.1MiB / 7.612GiB",
+          "capstone-api-server-1;129.02%;217.3MiB / 7.612GiB\nsupabase_db_sigmave;69.04%;151.5MiB / 7.612GiB",
+          "capstone-api-server-1;116.37%;217.7MiB / 7.612GiB\nsupabase_db_sigmave;83.71%;151.4MiB / 7.612GiB",
+          "capstone-api-server-1;120.19%;217.7MiB / 7.612GiB\nsupabase_db_sigmave;82.12%;151.6MiB / 7.612GiB",
+          "capstone-api-server-1;120.77%;217.5MiB / 7.612GiB\nsupabase_db_sigmave;80.23%;151.2MiB / 7.612GiB"
+        ]
+      }
+    ]
+  },
+  "con_300_vehiculos_mas": {
+    "fecha": "2026-11-24T15:24:41.415Z",
+    "endpoints": [
+      "/auth/me",
+      "/config",
+      "/companias",
+      "/vehiculos",
+      "/mantenimientos",
+      "/fallas?estado=pendiente,derivado",
+      "/notificaciones"
+    ],
+    "cuentas": [
+      "administrador@gmail.com",
+      "inspector.c1@sigmave.cl",
+      "teniente.c1@sigmave.cl",
+      "bombero.c1@sigmave.cl"
+    ],
+    "niveles": [
+      {
+        "usuarios": 50,
+        "segundos": 32,
+        "cargasDashboard": 1549,
+        "solicitudes": 10843,
+        "solicitudesPorSegundo": 340,
+        "erroresServidorORed": 0,
+        "codigos": {
+          "200": 10843
+        },
+        "dashboardMs": {
+          "n": 1549,
+          "p50": 941,
+          "p95": 1571,
+          "p99": 2698,
+          "max": 3773
+        },
+        "endpointMs": {
+          "/auth/me": {
+            "n": 1549,
+            "p50": 460,
+            "p95": 805,
+            "p99": 2227,
+            "max": 3342
+          },
+          "/config": {
+            "n": 1549,
+            "p50": 461,
+            "p95": 812,
+            "p99": 2226,
+            "max": 3365
+          },
+          "/companias": {
+            "n": 1549,
+            "p50": 921,
+            "p95": 1547,
+            "p99": 2666,
+            "max": 3729
+          },
+          "/vehiculos": {
+            "n": 1549,
+            "p50": 923,
+            "p95": 1547,
+            "p99": 2666,
+            "max": 3742
+          },
+          "/mantenimientos": {
+            "n": 1549,
+            "p50": 932,
+            "p95": 1570,
+            "p99": 2698,
+            "max": 3758
+          },
+          "/fallas?estado=pendiente,derivado": {
+            "n": 1549,
+            "p50": 924,
+            "p95": 1547,
+            "p99": 2667,
+            "max": 3758
+          },
+          "/notificaciones": {
+            "n": 1549,
+            "p50": 929,
+            "p95": 1556,
+            "p99": 2674,
+            "max": 3773
+          }
+        },
+        "docker": [
+          "capstone-api-server-1;116.44%;215.1MiB / 7.612GiB\nsupabase_db_sigmave;70.11%;152.5MiB / 7.612GiB",
+          "capstone-api-server-1;133.84%;217.7MiB / 7.612GiB\nsupabase_db_sigmave;50.93%;152.4MiB / 7.612GiB",
+          "capstone-api-server-1;120.33%;220.1MiB / 7.612GiB\nsupabase_db_sigmave;67.42%;152.8MiB / 7.612GiB",
+          "capstone-api-server-1;124.30%;219.5MiB / 7.612GiB\nsupabase_db_sigmave;67.38%;152.5MiB / 7.612GiB",
+          "capstone-api-server-1;124.87%;220.3MiB / 7.612GiB\nsupabase_db_sigmave;64.55%;152.6MiB / 7.612GiB"
+        ]
+      }
+    ]
+  }
+}

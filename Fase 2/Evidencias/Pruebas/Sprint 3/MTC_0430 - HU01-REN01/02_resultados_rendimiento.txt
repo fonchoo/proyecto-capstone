@@ -1,0 +1,35 @@
+MTC_0430 - HU01-REN01 · Tiempo de respuesta del listado de vehículos
+Entorno: local, equipo de desarrollo (Windows 11, 12 núcleos). API Express en Docker (modo desarrollo, nodemon),
+front en Vite (modo desarrollo, sin compilar), Supabase local en Docker. Fecha: 24-11-2026 (hora de Chile).
+Los tiempos del sitio publicado en Vercel serán distintos.
+
+CRITERIOS (definidos por el equipo para esta prueba; la ERS solo pide índices en las relaciones, RNF-04):
+  - API: p95 de GET /api/vehiculos <= 500 ms con un volumen representativo.
+  - Pantalla: el listado completo visible en el Dashboard en <= 2.000 ms.
+  - Sin degradación grave entre el volumen base y el volumen grande.
+  - La consulta usa índices en las columnas de relación (RNF-04).
+
+VOLUMEN:
+  - Base: la base local tal como quedó tras las pruebas anteriores (seed + datos de prueba): 7 vehículos y 4 mantenciones.
+  - Grande: 300 vehículos más (P-1 a P-300, en una compañía de prueba N° 99) con 2 preventivas cada uno:
+    307 vehículos y 604 mantenciones: muy por sobre la flota real de una compañía (la Primera tiene 2 carros
+    en el seed). Script en 04_volumen_de_prueba.sql; se borró al terminar.
+
+1. API · GET /api/vehiculos como administrador (todas las compañías), 5 de calentamiento y 100 medidas seguidas:
+   Volumen      Vehículos   Respuesta    p50     p95     p99     máx
+   Base local        7         2,3 KB    21 ms   34 ms   39 ms   43 ms
+   Grande          307       111,3 KB    17 ms   34 ms   37 ms   41 ms
+   -> sin degradación: con 44 veces más vehículos el p95 es el mismo.
+
+2. Base de datos · EXPLAIN ANALYZE de la consulta del listado (03_explain_analyze.txt):
+   Ejecución 1,7 ms (todas las compañías, 307 filas) y 1,8 ms (una compañía, 300 filas).
+   El cálculo de la preventiva usa el índice idx_mantencion_vehiculo (id_vehiculo) y la compañía se une por su
+   clave primaria: cumple RNF-04.
+
+3. Pantalla · carga completa de la app hasta ver el último vehículo (P-300) y «307 unidades», 5 veces:
+   320 · 404 · 434 · 440 · 669 ms (en todas, la respuesta de /api/vehiculos llegó entre 223 y 457 ms).
+   Captura 01: Dashboard del administrador con 307 unidades y la preventiva calculada (32 próximas, 17 vencidas).
+
+Resultado: p95 de la API 34 ms (<= 500 ms), listado en pantalla en máximo 669 ms (<= 2.000 ms), sin degradación
+entre 7 y 307 vehículos, y con índices en la consulta.
+Archivos: 05_script_rendimiento.mjs (uso: node 05_script_rendimiento.mjs ../../../../README.md etiqueta salida.json).

@@ -1,0 +1,34 @@
+MTC_0420 - HU12-CAR01 · Carga concurrente del dashboard
+Entorno: local, equipo de desarrollo (Windows 11, 12 núcleos). API Express en Docker (modo desarrollo, nodemon),
+Supabase local en Docker. Fecha: 24-11-2026 (hora de Chile). Los tiempos del sitio publicado en Vercel serán distintos.
+
+CRITERIOS (definidos por el equipo para esta prueba; la ERS no fija valores):
+  - Carga: usuarios virtuales que recargan el Dashboard SIN PAUSA durante 30 s por nivel (10, 25 y 50).
+    Es un peor caso: una compañía tiene del orden de decenas de voluntarios y no recargan todos a la vez.
+  - Cada carga del Dashboard repite las 7 llamadas que hace el front en paralelo (Front/src/store.jsx):
+    /auth/me, /config, /companias, /vehiculos, /mantenimientos, /fallas?estado=pendiente,derivado, /notificaciones.
+  - Sesiones: administrador, inspector.c1, teniente.c1 y bombero.c1, repartidas entre los usuarios virtuales.
+  - Aprobado si con 50 usuarios: 0 errores de servidor (5xx) o de red, y p95 del Dashboard completo <= 2.000 ms.
+
+RESULTADOS (base local actual: seed + datos de pruebas anteriores, 7 vehículos y 4 mantenciones):
+  base local                    10 usuarios ·  2724 cargas ·  633 sol/s · errores 0 · dashboard p50  106 · p95  149 · máx  506 ms
+  base local                    25 usuarios ·  2152 cargas ·  498 sol/s · errores 0 · dashboard p50  341 · p95  442 · máx  732 ms
+  base local                    50 usuarios ·  2386 cargas ·  550 sol/s · errores 0 · dashboard p50  609 · p95  831 · máx 2308 ms
+  Todas las respuestas fueron HTTP 200 (50834 en total). CPU media de la API: 125% / 119% / 121%.
+
+PRUEBA COMPLEMENTARIA (flota grande, la misma del MTC_0430: 307 vehículos y 604 mantenciones):
+  307 vehículos                 50 usuarios ·  1549 cargas ·  340 sol/s · errores 0 · dashboard p50  941 · p95 1571 · máx 3773 ms
+  Todas HTTP 200 (10843). El volumen se cargó solo para la prueba y se borró al terminar.
+
+Tiempo por llamada con 50 usuarios (p95, base local): /auth/me 432 ms · /config 434 ms · /companias 819 ms · /vehiculos 820 ms · /mantenimientos 819 ms · /fallas?estado=pendiente,derivado 822 ms · /notificaciones 826 ms
+
+HALLAZGO (no es un defecto): todas las llamadas tardan casi lo mismo y las que hacen 2 consultas (sesión + datos)
+tardan el doble que /auth/me y /config, que hacen 1. El límite es la fila de espera del pool de conexiones a la base
+(src/db.js, máximo 10 en local), no una consulta lenta: la consulta del listado tarda 1,7 ms en la base (ver MTC_0430).
+En Vercel cada instancia de la función tiene su propio pool (PGPOOL_MAX) y la plataforma escala por instancias.
+
+Resultado: con 50 usuarios recargando sin pausa no hubo errores y el p95 del Dashboard fue 831 ms (<= 2.000 ms).
+Con la flota grande, p95 1571 ms: también dentro del criterio.
+
+Archivos: 02_resultados_crudos.json (todas las medidas) · 03_script_carga.mjs (generador de carga, sin dependencias;
+uso: node 03_script_carga.mjs ../../../../README.md salida.json 10,25,50 30, con la API local en el puerto 3000).
