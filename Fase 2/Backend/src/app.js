@@ -21,6 +21,10 @@ import { MARCAS_VEHICULO, TIPOS_VEHICULO } from "./catalogoVehiculos.js";
 
 const app = express();
 
+// Sin el encabezado "X-Powered-By: Express": no aporta nada al cliente y
+// le dice a un atacante qué servidor buscar (observación de MTC_0440).
+app.disable("x-powered-by");
+
 app.use(express.json());
 // Lee la cookie de sesión (req.cookies), ver src/auth.js.
 app.use(cookieParser());

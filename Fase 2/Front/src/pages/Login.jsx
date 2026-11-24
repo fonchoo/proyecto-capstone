@@ -62,7 +62,14 @@ export default function Login() {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        setError(data.error || "Usuario o contraseña incorrectos");
+        // Un 5xx es una falla del servidor (o del proxy), no de las
+        // credenciales: decir "contraseña incorrecta" haría que el usuario
+        // reintente su clave y sume intentos al bloqueo de 5.
+        setError(
+          res.status >= 500
+            ? "No se pudo conectar con el servidor. Intenta de nuevo en unos segundos."
+            : data.error || "Usuario o contraseña incorrectos"
+        );
         return;
       }
 
