@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { themes } from "../themeStyles.js";
 import { useTheme } from "../theme.jsx";
 import { useVehicles } from "../store.jsx";
@@ -10,6 +10,17 @@ import EmptyState from "../components/EmptyState.jsx";
 import VehicleForm, { VEHICULO_VACIO } from "../components/VehicleForm.jsx";
 import { IcAlert, IcChevron, IcPlus } from "../components/Icons.jsx";
 import { estadoPreventiva, unidades } from "../utils.js";
+
+// Filtros de la tabla de la flota: cada indicador filtra por su estado.
+// La clave va en la URL (?estado=no_operativo), así el filtro se mantiene
+// al entrar a una ficha y volver atrás, y se puede compartir el enlace.
+const FILTROS = {
+  operativo: { etiqueta: "Operativos", cumple: (v) => v.status === "operational" },
+  en_mantencion: { etiqueta: "En mantención", cumple: (v) => v.status === "warning" },
+  no_operativo: { etiqueta: "No operativos", cumple: (v) => v.status === "critical" },
+  preventiva_proxima: { etiqueta: "Preventiva próxima", cumple: (v) => v.preventiveStatus === "proxima" },
+  preventiva_vencida: { etiqueta: "Preventiva vencida", cumple: (v) => v.preventiveStatus === "vencida" },
+};
 
 export default function Dashboard() {
   const { theme } = useTheme();
@@ -38,6 +49,25 @@ export default function Dashboard() {
   const notOperational = vehicles.filter((v) => v.status === "critical").length;
   const preventiveSoon = vehicles.filter((v) => v.preventiveStatus === "proxima").length;
   const preventiveOverdue = vehicles.filter((v) => v.preventiveStatus === "vencida").length;
+
+  // Filtro activo (o null). Una clave desconocida en la URL se ignora.
+  const [params, setParams] = useSearchParams();
+  const filtro = FILTROS[params.get("estado")] ? params.get("estado") : null;
+  const lista = filtro ? vehicles.filter(FILTROS[filtro].cumple) : vehicles;
+  // Presionar el indicador activo quita el filtro. "replace" para no
+  // llenar el historial con cada clic.
+  const alternarFiltro = (clave) =>
+    setParams(
+      (p) => {
+        const n = new URLSearchParams(p);
+        if (n.get("estado") === clave) n.delete("estado");
+        else n.set("estado", clave);
+        return n;
+      },
+      { replace: true }
+    );
+  const quitarFiltro = () => filtro && alternarFiltro(filtro);
+  const tarjeta = (clave) => ({ onClick: () => alternarFiltro(clave), active: filtro === clave });
 
   // Compañía preseleccionada: la elegida en el TopNav (administrador)
   // o, si no hay, la del usuario. El selector solo ofrece las del
@@ -112,28 +142,46 @@ export default function Dashboard() {
             <section className="lg:col-span-3" aria-label="Estado de la flota">
               <h2 className={t.label}>Estado de la flota</h2>
               <div className="grid grid-cols-3 gap-3">
-                <MetricCard value={operational} label="Operativos" accent="emerald" />
-                <MetricCard value={inMaintenance} label="En mantención" accent="amber" />
-                <MetricCard value={notOperational} label="No operativos" accent="red" />
+                <MetricCard value={operational} label="Operativos" accent="emerald" {...tarjeta("operativo")} />
+                <MetricCard value={inMaintenance} label="En mantención" accent="amber" {...tarjeta("en_mantencion")} />
+                <MetricCard value={notOperational} label="No operativos" accent="red" {...tarjeta("no_operativo")} />
               </div>
             </section>
             {/* HU09: vencimiento de la mantención preventiva. */}
             <section className="lg:col-span-2" aria-label="Mantención preventiva">
               <h2 className={t.label}>Mantención preventiva</h2>
               <div className="grid grid-cols-2 gap-3">
-                <MetricCard value={preventiveSoon} label={`Próxima (${diasAviso} días)`} accent="amber" />
-                <MetricCard value={preventiveOverdue} label="Vencida" accent="red" />
+                <MetricCard value={preventiveSoon} label={`Próxima (${diasAviso} días)`} accent="amber" {...tarjeta("preventiva_proxima")} />
+                <MetricCard value={preventiveOverdue} label="Vencida" accent="red" {...tarjeta("preventiva_vencida")} />
               </div>
             </section>
           </div>
 
           <div className={`${t.card} overflow-hidden`}>
-            <div className={`flex items-center justify-between px-4 py-3.5 ${t.cardBorder}`}>
+            <div className={`flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-3.5 ${t.cardBorder}`}>
               <h2 className={t.cardTitle}>Flota de Emergencia</h2>
-              <span className={t.cardMeta}>{unidades(vehicles.length)}</span>
+              {filtro ? (
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span className={t.cardMeta} role="status">
+                    {lista.length} de {unidades(vehicles.length)} · {FILTROS[filtro].etiqueta}
+                  </span>
+                  <button type="button" onClick={quitarFiltro} className={t.userActionBtn}>
+                    Quitar filtro
+                  </button>
+                </div>
+              ) : (
+                <span className={t.cardMeta}>{unidades(vehicles.length)}</span>
+              )}
             </div>
+            {lista.length === 0 && (
+              <EmptyState
+                icon={<IcAlert cls="w-7 h-7" />}
+                title={`No hay vehículos en «${FILTROS[filtro].etiqueta}»`}
+                subtitle="Presiona el indicador otra vez o «Quitar filtro» para ver toda la flota."
+              />
+            )}
             <div className={t.divide}>
-              {vehicles.map((v) => {
+              {lista.map((v) => {
                 const prev = estadoPreventiva(v);
                 return (
                 <Link

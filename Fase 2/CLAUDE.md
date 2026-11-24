@@ -61,6 +61,7 @@ Las migraciones son la fuente de verdad del esquema. Los diagramas de `Evidencia
 - `permissions.js` replica la matriz de roles del backend. **Hay que mantenerla sincronizada a mano** con `Backend/src/auth.js` y con los `requireRol` de las rutas. El guard de `App.jsx` es solo para la experiencia de usuario: la seguridad real la aplica la API.
 - Temas: `theme.jsx` alterna entre `v1` (oscuro) y `v2`. Los componentes obtienen sus clases con `themes[theme]` desde `themeStyles.js`. Un estilo nuevo tiene que definirse en **ambos** temas.
 - Ficha del vehículo (`VehicleDetail.jsx`): tiene las pestañas «Resumen» e «Historial». La pestaña va en la URL (`?tab=historial`), así que para enlazar al historial (notificaciones, panel de Fallas, después de guardar una mantención) se usa `/vehiculos/:id?tab=historial`.
+- Dashboard: los indicadores (`MetricCard` con `onClick`) filtran la tabla de la flota. El filtro también va en la URL (`?estado=no_operativo`; claves en `FILTROS` de `Dashboard.jsx`), así que se puede enlazar a `/dashboard?estado=preventiva_vencida`.
 - Formularios: siguen el patrón `fieldErrors`/`formError`/`formOk` dentro de la página (ver `Dashboard.jsx` y `Users.jsx`). Si el formulario se cierra al guardar, el mensaje de éxito tiene que renderizarse fuera de él, porque si no nunca se ve.
 
 ## Convenciones
