@@ -141,6 +141,11 @@ export const themes = {
     userAvatarTxt: "text-xs font-bold text-gray-300",
     userName: "text-sm font-semibold text-white truncate",
     userEmail: "text-xs text-gray-600 break-all sm:truncate font-mono",
+    // HU16: cuenta desactivada y acciones de la fila.
+    userInactiveBadge: "text-xs px-2.5 py-1 rounded-full font-medium shrink-0 bg-red-500/10 text-red-400",
+    userActionBtn: "text-xs font-medium text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50",
+    userDangerBtn: "text-xs font-medium text-red-400 hover:text-red-300 transition-colors disabled:opacity-50",
+    userConfirmTxt: "text-xs text-gray-400",
     roleBadge: (role) =>
       `text-xs px-2.5 py-1 rounded-full font-medium shrink-0 ${
         role === "Administrador" ? "bg-purple-500/10 text-purple-400" :
@@ -300,6 +305,11 @@ export const themes = {
     userAvatarTxt: "text-xs font-bold text-gray-600",
     userName: "text-sm font-semibold text-gray-900 truncate",
     userEmail: "text-xs text-gray-400 break-all sm:truncate",
+    // HU16: cuenta desactivada y acciones de la fila.
+    userInactiveBadge: "text-xs px-2.5 py-1 rounded-full font-medium shrink-0 bg-red-50 text-red-700",
+    userActionBtn: "text-xs font-medium text-gray-700 hover:text-gray-900 underline-offset-2 hover:underline transition-colors disabled:opacity-50",
+    userDangerBtn: "text-xs font-medium text-red-600 hover:text-red-700 underline-offset-2 hover:underline transition-colors disabled:opacity-50",
+    userConfirmTxt: "text-xs text-gray-500",
     roleBadge: (role) =>
       `text-xs px-2.5 py-1 rounded-full font-medium shrink-0 ${
         role === "Administrador" ? "bg-purple-50 text-purple-700" :

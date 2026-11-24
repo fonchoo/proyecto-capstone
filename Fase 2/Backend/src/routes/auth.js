@@ -9,6 +9,11 @@
 // correo lo bloquean 15 minutos (tabla intento_login, ver su
 // migración). Los fallos se cuentan aunque el correo no exista, así la
 // respuesta no delata qué correos están registrados.
+//
+// Cuenta desactivada (HU16, HU17 CA5): no entra aunque la contraseña
+// sea correcta. El aviso «cuenta desactivada» se da SOLO con la
+// contraseña correcta; con una incorrecta la respuesta es la misma de
+// siempre, así no se puede averiguar qué cuentas están desactivadas.
 
 import { Router } from "express";
 import bcrypt from "bcryptjs";
@@ -99,7 +104,7 @@ router.post("/login", async (req, res, next) => {
     if (minutos > 0) return res.status(429).json(bloqueado(minutos));
 
     const { rows } = await pool.query(
-      "SELECT id_usuario, password FROM usuario WHERE email = $1",
+      "SELECT id_usuario, password, activo FROM usuario WHERE email = $1",
       [email]
     );
 
@@ -112,6 +117,14 @@ router.post("/login", async (req, res, next) => {
         return res.status(429).json(bloqueado(MINUTOS_BLOQUEO));
       }
       return res.status(401).json({ error: "Credenciales inválidas" });
+    }
+
+    // Credenciales correctas, pero la cuenta está desactivada: no es un
+    // intento fallido (no suma al bloqueo), simplemente no entra.
+    if (!rows[0].activo) {
+      return res.status(403).json({
+        error: "Tu cuenta está desactivada. Contacta al administrador de SIGMAVE.",
+      });
     }
 
     // Login correcto: se olvidan los fallos de ese correo.

@@ -1,8 +1,14 @@
 // ============================================================
 // src/routes/usuarios.js
 // ============================================================
-// CRUD de la tabla "usuario". El password se guarda con hash
+// Gestión de la tabla "usuario". El password se guarda con hash
 // (bcrypt) para no almacenar contraseñas en texto plano.
+//
+// Los usuarios no se borran: se desactivan (HU16). Borrar era imposible
+// apenas el usuario tenía reportes o mantenciones (FK RESTRICT) y se
+// perdía el «Reportado por» del historial. Una cuenta inactiva no
+// entra, pierde su sesión y no recibe avisos (ver la migración
+// usuario_activo). Se puede reactivar por si se desactivó por error.
 
 import { Router } from "express";
 import bcrypt from "bcryptjs";
@@ -26,7 +32,7 @@ router.use(requireRol("administrador"));
 
 // Selector base y campos legibles.
 const SELECT_USUARIO = `
-  SELECT u.id_usuario, u.rut, u.nombre_completo, u.email,
+  SELECT u.id_usuario, u.rut, u.nombre_completo, u.email, u.activo,
          r.id_rol, r.nombre_rol,
          c.id_compania, c.nombre AS nombre_compania
   FROM usuario u
@@ -134,7 +140,7 @@ function duplicado(error) {
   return { error: "RUT o correo ya registrado" };
 }
 
-const COLUMNAS_USUARIO = "id_usuario, rut, nombre_completo, email, id_rol, id_compania";
+const COLUMNAS_USUARIO = "id_usuario, rut, nombre_completo, email, activo, id_rol, id_compania";
 
 // ---------- POST /api/usuarios (crear) ----------
 router.post("/", async (req, res, next) => {
@@ -190,27 +196,47 @@ router.put("/:id", async (req, res, next) => {
   }
 });
 
-// ---------- DELETE /api/usuarios/:id (eliminar) ----------
-router.delete("/:id", async (req, res, next) => {
+// Activa o desactiva una cuenta (HU16). Responde el usuario actualizado,
+// o el motivo por el que no se pudo:
+//   - 400 si el administrador intenta desactivarse a sí mismo (se
+//     quedaría sin sesión y, si es el único, el sistema sin administrador);
+//   - 404 si el usuario no existe;
+//   - 409 si la cuenta ya estaba en ese estado (HU16 CA6).
+async function cambiarEstado(req, res, next, activo) {
   try {
-    const { rowCount } = await pool.query(
-      "DELETE FROM usuario WHERE id_usuario = $1",
-      [req.params.id]
-    );
-    if (rowCount === 0) {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
-    res.status(204).end();
-  } catch (error) {
-    // FK RESTRICT: el usuario figura en mantenciones o reportes de falla.
-    if (error.code === "23503") {
-      return res.status(409).json({
-        error:
-          "El usuario tiene mantenciones o reportes de falla registrados y no se puede eliminar",
-      });
+    if (!activo && id === req.usuario.id_usuario) {
+      return res.status(400).json({ error: "No puedes desactivar tu propia cuenta" });
     }
+
+    const { rows } = await pool.query(
+      `UPDATE usuario SET activo = $2
+       WHERE id_usuario = $1 AND activo <> $2
+       RETURNING ${COLUMNAS_USUARIO}`,
+      [id, activo]
+    );
+    if (rows.length > 0) return res.json(rows[0]);
+
+    // No cambió nada: o no existe, o ya estaba así.
+    const existe = await pool.query("SELECT 1 FROM usuario WHERE id_usuario = $1", [id]);
+    if (existe.rowCount === 0) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+    res.status(409).json({
+      error: activo ? "La cuenta ya está activa" : "La cuenta ya está desactivada",
+    });
+  } catch (error) {
     next(error);
   }
-});
+}
+
+// ---------- PATCH /api/usuarios/:id/desactivar (HU16) ----------
+router.patch("/:id/desactivar", (req, res, next) => cambiarEstado(req, res, next, false));
+
+// ---------- PATCH /api/usuarios/:id/reactivar ----------
+router.patch("/:id/reactivar", (req, res, next) => cambiarEstado(req, res, next, true));
 
 export default router;

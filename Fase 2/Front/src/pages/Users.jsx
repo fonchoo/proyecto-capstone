@@ -30,7 +30,13 @@ const mapUser = (u) => ({
   name: u.nombre_completo,
   email: u.email,
   role: ROLE_LABELS[u.nombre_rol] || u.nombre_rol,
+  active: u.activo !== false,
 });
+
+const cargarUsuarios = () =>
+  fetch("/api/usuarios")
+    .then((r) => r.json())
+    .then((rows) => rows.map(mapUser));
 
 const FORM_INICIAL = {
   rut: "",
@@ -55,6 +61,10 @@ export default function Users() {
   const [formError, setFormError] = useState("");
   const [formOk, setFormOk] = useState("");
   const [loading, setLoading] = useState(false);
+  // HU16: fila esperando confirmación y acción en curso.
+  const [confirmando, setConfirmando] = useState(null);
+  const [cambiando, setCambiando] = useState(null);
+  const [accionError, setAccionError] = useState("");
 
   const errorCls = theme === "v1" ? "text-xs text-red-400" : "text-sm text-red-600";
   const okCls = theme === "v1" ? "text-xs text-emerald-400" : "text-sm text-emerald-600";
@@ -73,9 +83,8 @@ export default function Users() {
 
   // Carga los usuarios, roles y compañías.
   useEffect(() => {
-    const loadUsuarios = fetch("/api/usuarios")
-      .then((r) => r.json())
-      .then((rows) => setUsers(rows.map(mapUser)))
+    const loadUsuarios = cargarUsuarios()
+      .then(setUsers)
       .catch(() => {});
 
     const loadRoles = fetch("/api/roles")
@@ -169,8 +178,7 @@ export default function Users() {
       setFormOk("Usuario creado correctamente");
       setShowForm(false);
 
-      const rows = await fetch("/api/usuarios").then((r) => r.json());
-      setUsers(rows.map(mapUser));
+      setUsers(await cargarUsuarios());
     } catch (err) {
       setFormError(err.message);
     } finally {
@@ -178,9 +186,41 @@ export default function Users() {
     }
   };
 
+  // HU16: desactivar (con confirmación) o reactivar una cuenta. La API
+  // valida todo (no a uno mismo, ya desactivada); acá se muestra su
+  // mensaje y se recarga el listado para ver el estado nuevo (CA5).
+  const cambiarEstado = async (u, accion) => {
+    setConfirmando(null);
+    setAccionError("");
+    setFormOk("");
+    setCambiando(u.id);
+    try {
+      const res = await fetch(`/api/usuarios/${u.id}/${accion}`, { method: "PATCH" });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || "No se pudo cambiar el estado de la cuenta");
+      setFormOk(
+        accion === "desactivar"
+          ? `Cuenta de ${u.name} desactivada: ya no puede iniciar sesión`
+          : `Cuenta de ${u.name} reactivada`
+      );
+      setUsers(await cargarUsuarios());
+    } catch (err) {
+      setAccionError(err.message);
+    } finally {
+      setCambiando(null);
+    }
+  };
+
+  const inactivos = users.filter((u) => !u.active).length;
+
   return (
     <div>
-      <PageHeader title="Gestión de Usuarios" subtitle={`${users.length} usuarios registrados`} />
+      <PageHeader
+        title="Gestión de Usuarios"
+        subtitle={`${users.length} usuarios registrados${
+          inactivos ? ` · ${inactivos} ${inactivos === 1 ? "desactivado" : "desactivados"}` : ""
+        }`}
+      />
       <div className="px-4 pb-6 space-y-4 lg:px-8">
         <button
           onClick={() => {
@@ -196,6 +236,7 @@ export default function Users() {
         {/* Fuera del formulario: al guardar, el formulario se cierra y el
             mensaje tiene que seguir visible. */}
         {formOk && <p role="status" className={okCls}>{formOk}</p>}
+        {accionError && <p role="alert" className={errorCls}>{accionError}</p>}
 
         {showForm && (
           <div className={t.addForm}>
@@ -300,18 +341,67 @@ export default function Users() {
             />
           ) : (
             <div className={t.divide}>
-              {users.map((u) => (
-                <div key={u.id} className="flex items-center gap-3 px-4 py-4">
-                  <div className={t.userAvatar}>
-                    <span className={t.userAvatarTxt}>{initials(u.name)}</span>
+              {users.map((u) => {
+                const esYo = u.id === String(user?.id_usuario);
+                return (
+                  <div
+                    key={u.id}
+                    className={`flex items-center gap-3 px-4 py-4 ${u.active ? "" : "opacity-60"}`}
+                  >
+                    <div className={t.userAvatar}>
+                      <span className={t.userAvatarTxt}>{initials(u.name)}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={t.userName}>{u.name}</p>
+                      <p className={t.userEmail}>{u.email}</p>
+                      {/* Acciones (HU16). La propia cuenta no se ofrece:
+                          la API tampoco lo permite. */}
+                      {!esYo && (
+                        <div className="flex flex-wrap items-center gap-3 mt-1.5">
+                          {confirmando === u.id ? (
+                            <>
+                              <span className={t.userConfirmTxt}>¿Desactivar esta cuenta?</span>
+                              <button
+                                onClick={() => cambiarEstado(u, "desactivar")}
+                                className={t.userDangerBtn}
+                              >
+                                Confirmar
+                              </button>
+                              <button onClick={() => setConfirmando(null)} className={t.userActionBtn}>
+                                Cancelar
+                              </button>
+                            </>
+                          ) : u.active ? (
+                            <button
+                              onClick={() => {
+                                setAccionError("");
+                                setConfirmando(u.id);
+                              }}
+                              disabled={cambiando === u.id}
+                              className={t.userDangerBtn}
+                            >
+                              Desactivar cuenta
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => cambiarEstado(u, "reactivar")}
+                              disabled={cambiando === u.id}
+                              className={t.userActionBtn}
+                            >
+                              {cambiando === u.id ? "Reactivando..." : "Reactivar cuenta"}
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    {u.active ? (
+                      <span className={t.roleBadge(u.role)}>{roleShort(u.role)}</span>
+                    ) : (
+                      <span className={t.userInactiveBadge}>Inactivo</span>
+                    )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className={t.userName}>{u.name}</p>
-                    <p className={t.userEmail}>{u.email}</p>
-                  </div>
-                  <span className={t.roleBadge(u.role)}>{roleShort(u.role)}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

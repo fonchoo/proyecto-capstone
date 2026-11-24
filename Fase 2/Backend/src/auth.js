@@ -15,8 +15,8 @@
 // evita que otro sitio la use (CSRF).
 //
 // Por qué se relee el usuario de la base en cada petición: si un
-// administrador le cambia el rol o la compañía, o lo elimina, el
-// cambio rige de inmediato y no recién cuando vence el token.
+// administrador le cambia el rol o la compañía, o desactiva su cuenta
+// (HU16), el cambio rige de inmediato y no recién cuando vence el token.
 
 import "dotenv/config";
 import jwt from "jsonwebtoken";
@@ -92,11 +92,12 @@ export async function requireAuth(req, res, next) {
     }
 
     const { rows } = await pool.query(
-      `${SELECT_USUARIO_SESION} WHERE u.id_usuario = $1`,
+      `${SELECT_USUARIO_SESION} WHERE u.id_usuario = $1 AND u.activo`,
       [Number(payload.sub)]
     );
     if (rows.length === 0) {
-      // El usuario fue eliminado después de iniciar sesión.
+      // La cuenta fue desactivada (HU16) o ya no existe después de
+      // iniciar sesión: la sesión abierta deja de servir.
       cerrarSesion(res);
       return res.status(401).json({ error: "Sesión expirada o inválida" });
     }

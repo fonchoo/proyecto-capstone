@@ -9,7 +9,8 @@
 // "Vehículo asociado" (HU11) = vehículo de la compañía del usuario: en
 // SIGMAVE los usuarios están ligados a una compañía, no a vehículos.
 // Los administradores no reciben estos avisos: su compañía es nominal
-// (ven todas) y ya tienen el panel de Fallas.
+// (ven todas) y ya tienen el panel de Fallas. Las cuentas desactivadas
+// (HU16) tampoco: no pueden entrar a leerlos.
 //
 // Avisos dentro de la app, no push del sistema operativo: el front los
 // consulta mientras la app está abierta (GET /api/notificaciones).
@@ -33,6 +34,7 @@ export async function notificarFallaReportada(db, reporte) {
      JOIN rol r ON r.id_rol = u.id_rol
      WHERE u.id_compania = $4
        AND u.id_usuario <> $5
+       AND u.activo
        AND r.nombre_rol <> 'administrador'`,
     [mensaje, reporte.id_vehiculo, reporte.id_reporte_falla, reporte.id_compania, reporte.id_usuario]
   );
@@ -51,6 +53,7 @@ export async function notificarFallaDerivada(db, reporte, idUsuarioDeriva) {
      JOIN rol r ON r.id_rol = u.id_rol
      WHERE u.id_compania = $4
        AND u.id_usuario <> $5
+       AND u.activo
        AND r.nombre_rol = 'inspector_material_mayor'`,
     [mensaje, reporte.id_vehiculo, reporte.id_reporte_falla, reporte.id_compania, idUsuarioDeriva]
   );
