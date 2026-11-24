@@ -5,6 +5,15 @@
     <link rel="icon" type="image/jpeg" href="/logo_sigmave.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Control de Mantención · 1ª Cía. CBM</title>
+    <script>
+      // Fondo del tema guardado (src/theme.jsx, clave "sigmave_tema") antes
+      // de que cargue React: sin esto, al recargar con el tema claro se ve
+      // un instante el fondo oscuro (o blanco) hasta que la app pinta.
+      try {
+        document.documentElement.style.backgroundColor =
+          localStorage.getItem("sigmave_tema") === "v2" ? "#f9fafb" : "#030712";
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>
